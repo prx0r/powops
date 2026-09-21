@@ -1,0 +1,11 @@
+[Unit]
+Description=POWOPS Health Snapshot
+After=network.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/home/ubuntu/powops
+ExecStart=/usr/bin/python3 -m powops status --no-color
+StandardOutput=append:/var/log/powops-health.log
+StandardError=append:/var/log/powops-health.log

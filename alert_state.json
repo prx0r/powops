@@ -1,0 +1,50 @@
+{
+  "chain_state": {
+    "status": "ok",
+    "updated_at": "2026-09-21T18:35:38.326674+00:00"
+  },
+  "venue_l2": {
+    "status": "ok",
+    "updated_at": "2026-09-21T18:35:38.326705+00:00"
+  },
+  "venue_ws": {
+    "status": "ok",
+    "updated_at": "2026-09-21T18:35:38.326714+00:00"
+  },
+  "qubic_collector": {
+    "status": "ok",
+    "updated_at": "2026-09-21T18:35:38.326721+00:00"
+  },
+  "prl_collector": {
+    "status": "ok",
+    "updated_at": "2026-09-21T18:35:38.326728+00:00"
+  },
+  "xmr_collector": {
+    "status": "ok",
+    "updated_at": "2026-09-21T18:35:38.326735+00:00"
+  },
+  "clore_collector": {
+    "status": "ok",
+    "updated_at": "2026-09-21T18:35:38.326742+00:00"
+  },
+  "open_repair": {
+    "status": "ok",
+    "updated_at": "2026-09-21T18:35:38.326749+00:00"
+  },
+  "partsdb": {
+    "status": "no_key",
+    "updated_at": "2026-09-21T18:35:38.326775+00:00"
+  },
+  "powuk_neso": {
+    "status": "not_installed",
+    "updated_at": "2026-09-21T18:35:38.326785+00:00"
+  },
+  "powuk_companies_house": {
+    "status": "not_installed",
+    "updated_at": "2026-09-21T18:35:38.326792+00:00"
+  },
+  "powstock_prices": {
+    "status": "not_installed",
+    "updated_at": "2026-09-21T18:35:38.326798+00:00"
+  }
+}

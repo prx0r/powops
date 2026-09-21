@@ -1,0 +1,286 @@
+# sources.yaml — Universal Source Manifest for POW Gardens
+#
+# Every data source across all Layer 1 gardens, declared once.
+# powops reads this to know what to monitor and how.
+#
+# Health check types:
+#   heartbeat    — reads a JSON file with "heartbeat_at" timestamp
+#   collector_db — queries a SQLite collector_run table
+#   raw_mtime    — checks file modification times in a raw directory
+#   pid_file     — checks if a PID file contains a live process
+#   http         — hits an HTTP endpoint (future)
+#
+# Alert states: ok → alerting (fires webhook) → ok (fires recovery)
+
+alerting:
+  enabled: true
+  # Default webhook for all sources (override per-source)
+  default_webhook: null
+  # Suppress repeated alerts within this window
+  suppress_window: 30m
+
+gardens:
+  powpowpow:
+    path: /home/ubuntu/powpowpow
+    description: PoW chain compute / crypto-resource telemetry
+    health_check: heartbeat_files
+    storage: warehouse/raw/
+
+  repair:
+    path: /home/ubuntu/repair
+    description: Physical asset / failure / parts / resale telemetry
+    health_check: collector_db
+    db_path: warehouse/repair.db
+    storage: warehouse/
+
+  powuk:
+    path: /home/ubuntu/powuk
+    description: UK physical capacity / labour / infrastructure / policy
+    health_check: raw_mtime
+    storage: data/raw/
+    status: not_installed
+
+  powstock:
+    path: /home/ubuntu/powstock
+    description: UK public-market / corporate / ownership / microstructure
+    health_check: heartbeat_files
+    storage: warehouse/raw/
+    status: not_installed
+
+sources:
+  # ═══════════════════════════════════════════════════════════
+  # POWPOWPOW — compute / PoW chain telemetry
+  # ═══════════════════════════════════════════════════════════
+
+  - id: chain_state
+    garden: powpowpow
+    authority: Multi-chain RPC
+    type: rpc
+    description: Live network state poller (QUBIC, XMR, KAS, AKT, NOCK)
+    cadence: 300s
+    health:
+      check: heartbeat
+      file: warehouse/chain_state_heartbeat.json
+      max_staleness: 10m
+      expect_keys: ["heartbeat_at"]
+    alert:
+      enabled: true
+      severity:
+        stale: true
+        error: true
+      # webhook: https://your-webhook-url
+
+  - id: venue_l2
+    garden: powpowpow
+    authority: CoinEx/Gate/MEXC
+    type: rest
+    description: REST L2 order books, tickers, and trades
+    cadence: 30s
+    health:
+      check: heartbeat
+      file: warehouse/venue_l2_heartbeat.json
+      max_staleness: 5m
+      expect_keys: ["heartbeat_at"]
+    alert:
+      enabled: true
+      severity:
+        stale: true
+        error: true
+
+  - id: venue_ws
+    garden: powpowpow
+    authority: CoinEx/Gate WebSocket
+    type: websocket
+    description: Real-time tick archive (trades + orderbook snapshots)
+    cadence: realtime
+    health:
+      check: heartbeat
+      file: warehouse/venue_ws_heartbeat.json
+      max_staleness: 2m
+      expect_keys: ["heartbeat_at"]
+    alert:
+      enabled: true
+      severity:
+        stale: true
+        error: true
+
+  - id: qubic_collector
+    garden: powpowpow
+    authority: Qubic RPC
+    type: rpc
+    description: QUBIC tick, status, epoch, and contract data
+    cadence: 300s
+    health:
+      check: heartbeat
+      file: warehouse/chain_state_heartbeat.json
+      max_staleness: 10m
+
+  - id: prl_collector
+    garden: powpowpow
+    authority: PearlTrack
+    type: rest
+    description: PRL mining stats and derived labels
+    cadence: 300s
+    health:
+      check: heartbeat
+      file: warehouse/chain_state_heartbeat.json
+      max_staleness: 10m
+
+  - id: xmr_collector
+    garden: powpowpow
+    authority: LocalMonero/CoinGecko
+    type: rest
+    description: Monero network and price data
+    cadence: 120s
+    health:
+      check: heartbeat
+      file: warehouse/chain_state_heartbeat.json
+      max_staleness: 10m
+
+  - id: clore_collector
+    garden: powpowpow
+    authority: Clore AI
+    type: rest
+    description: Clore marketplace and mining telemetry
+    cadence: 300s
+    health:
+      check: heartbeat
+      file: warehouse/chain_state_heartbeat.json
+      max_staleness: 10m
+
+  - id: daemon
+    garden: powpowpow
+    authority: powpowpow
+    type: process
+    description: Master daemon supervising collectors
+    cadence: continuous
+    health:
+      check: pid_file
+      file: daemon.pid
+      max_staleness: 2m
+
+  # ═══════════════════════════════════════════════════════════
+  # REPAIR — physical asset / failure / parts / resale
+  # ═══════════════════════════════════════════════════════════
+
+  - id: open_repair
+    garden: repair
+    authority: Open Repair Alliance
+    type: bulk_csv
+    description: 305K+ repair records from Open Repair Alliance
+    cadence: 24h
+    health:
+      check: collector_db
+      source_id: open_repair
+      max_staleness: 48h
+
+  - id: cex_pricing
+    garden: repair
+    authority: CeX UK
+    type: scrape
+    description: Used electronics buy/sell pricing across UK
+    cadence: 6h
+    health:
+      check: collector_db
+      source_id: cex
+      max_staleness: 12h
+
+  - id: trade_pricing
+    garden: repair
+    authority: Screwfix/Toolstation
+    type: scrape
+    description: UK trade pricing (batteries, motors, switches, tools)
+    cadence: 12h
+    health:
+      check: collector_db
+      source_id: trade
+      max_staleness: 24h
+
+  - id: robotshop
+    garden: repair
+    authority: RobotShop UK
+    type: scrape
+    description: Robot components (actuators, controllers, sensors)
+    cadence: 12h
+    health:
+      check: collector_db
+      source_id: robotshop
+      max_staleness: 24h
+
+  - id: partsdb
+    garden: repair
+    authority: PartsDB.io
+    type: api
+    description: Electronic component cross-references and pricing
+    cadence: 24h
+    api_key_env: PARTSDB_API_KEY
+    health:
+      check: collector_db
+      source_id: partsdb
+      max_staleness: 48h
+
+  - id: opss_recalls
+    garden: repair
+    authority: OPSS UK
+    type: html_parse
+    description: UK product safety recalls
+    cadence: 24h
+    health:
+      check: collector_db
+      source_id: opss
+      max_staleness: 48h
+
+  - id: repair_daemon
+    garden: repair
+    authority: repair
+    type: process
+    description: Repair Garden collector daemon
+    cadence: continuous
+    health:
+      check: pid_file
+      file: repair.pid
+      max_staleness: 5m
+
+  # ═══════════════════════════════════════════════════════════
+  # POWUK — UK physical economy (placeholder)
+  # ═══════════════════════════════════════════════════════════
+
+  - id: powuk_neso
+    garden: powuk
+    authority: NESO
+    type: csv
+    description: UK grid connection queue
+    cadence: daily
+    status: not_installed
+    health:
+      check: raw_mtime
+      directory: data/raw/neso
+      max_staleness: 48h
+
+  - id: powuk_companies_house
+    garden: powuk
+    authority: Companies House
+    type: api
+    description: UK company filings and director changes
+    cadence: daily
+    status: not_installed
+    health:
+      check: raw_mtime
+      directory: data/raw/companies_house
+      max_staleness: 48h
+
+  # ═══════════════════════════════════════════════════════════
+  # POWSTOCK — UK capital markets (placeholder)
+  # ═══════════════════════════════════════════════════════════
+
+  - id: powstock_prices
+    garden: powstock
+    authority: LSE
+    type: api
+    description: UK equity prices and L2 order books
+    cadence: 60s
+    status: not_installed
+    health:
+      check: heartbeat
+      file: warehouse/heartbeat.json
+      max_staleness: 5m

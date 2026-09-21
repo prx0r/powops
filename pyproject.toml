@@ -1,0 +1,13 @@
+[project]
+name = "powops"
+version = "0.1.0"
+description = "Layer 1 command centre for POW gardens"
+requires-python = ">=3.10"
+dependencies = [
+    "pyyaml",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]

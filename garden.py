@@ -1,0 +1,318 @@
+"""Garden discovery and per-garden health readers.
+
+Each garden produces health artifacts in its own format:
+- powpowpow: heartbeat JSON files, daemon PID
+- repair: SQLite collector_run table
+- powuk: raw directory file mtimes
+- powstock: heartbeat JSON files (when it exists)
+
+This module reads those artifacts and returns a uniform SourceStatus.
+"""
+
+import json
+import os
+import sqlite3
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from typing import Optional
+
+
+@dataclass
+class SourceStatus:
+    """Uniform health status for a single data source."""
+    source_id: str
+    garden: str
+    authority: str
+    description: str
+    status: str  # ok, stale, blocked, no_key, not_installed, error, unknown
+    last_good: Optional[datetime] = None
+    age: Optional[timedelta] = None
+    records: Optional[int] = None
+    error: Optional[str] = None
+    details: dict = field(default_factory=dict)
+
+    @property
+    def status_icon(self) -> str:
+        return {
+            "ok": "ok",
+            "stale": "stale",
+            "blocked": "blocked",
+            "no_key": "no_key",
+            "not_installed": "not_installed",
+            "error": "error",
+            "unknown": "unknown",
+        }.get(self.status, "?")
+
+
+def _parse_duration(s: str) -> timedelta:
+    """Parse a human duration like '10m', '2h', '48h', '300s' into timedelta."""
+    s = s.strip().lower()
+    if s.endswith("s"):
+        return timedelta(seconds=int(s[:-1]))
+    elif s.endswith("m"):
+        return timedelta(minutes=int(s[:-1]))
+    elif s.endswith("h"):
+        return timedelta(hours=int(s[:-1]))
+    elif s.endswith("d"):
+        return timedelta(days=int(s[:-1]))
+    return timedelta(minutes=10)
+
+
+def _parse_ts(ts_str: str) -> Optional[datetime]:
+    """Parse an ISO timestamp string into a timezone-aware datetime."""
+    if not ts_str:
+        return None
+    try:
+        # Handle Z suffix
+        ts_str = ts_str.replace("Z", "+00:00")
+        dt = datetime.fromisoformat(ts_str)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    except (ValueError, TypeError):
+        return None
+
+
+def _age_since(dt: Optional[datetime]) -> Optional[timedelta]:
+    """Compute age since a datetime, or None."""
+    if dt is None:
+        return None
+    now = datetime.now(timezone.utc)
+    return now - dt
+
+
+class GardenReader:
+    """Reads health artifacts from a specific garden."""
+
+    def __init__(self, garden_id: str, garden_config: dict):
+        self.garden_id = garden_id
+        self.path = Path(garden_config["path"])
+        self.config = garden_config
+
+    def exists(self) -> bool:
+        return self.path.exists() and self.path.is_dir()
+
+    def read_heartbeat(self, health_config: dict) -> SourceStatus:
+        """Read a heartbeat JSON file and compute status."""
+        heartbeat_path = self.path / health_config["file"]
+        max_staleness = _parse_duration(health_config.get("max_staleness", "10m"))
+
+        if not heartbeat_path.exists():
+            return SourceStatus(
+                source_id="", garden=self.garden_id,
+                authority="", description="",
+                status="unknown",
+                error=f"Heartbeat file not found: {heartbeat_path}",
+            )
+
+        try:
+            with open(heartbeat_path) as f:
+                data = json.load(f)
+        except (json.JSONDecodeError, OSError) as e:
+            return SourceStatus(
+                source_id="", garden=self.garden_id,
+                authority="", description="",
+                status="error",
+                error=f"Failed to read heartbeat: {e}",
+            )
+
+        heartbeat_at = _parse_ts(data.get("heartbeat_at", ""))
+        age = _age_since(heartbeat_at)
+        is_stale = age is not None and age > max_staleness
+
+        # Extract stats
+        stats = {k: v for k, v in data.items() if k != "heartbeat_at" and k != "mode"}
+
+        return SourceStatus(
+            source_id="", garden=self.garden_id,
+            authority="", description="",
+            status="stale" if is_stale else "ok",
+            last_good=heartbeat_at,
+            age=age,
+            details=stats,
+        )
+
+    def read_collector_db(self, health_config: dict) -> SourceStatus:
+        """Query the repair-style collector_run table."""
+        db_path = self.path / self.config.get("db_path", "warehouse/repair.db")
+        source_id = health_config.get("source_id", "")
+        max_staleness = _parse_duration(health_config.get("max_staleness", "24h"))
+
+        if not db_path.exists():
+            return SourceStatus(
+                source_id=source_id, garden=self.garden_id,
+                authority="", description="",
+                status="unknown",
+                error=f"Database not found: {db_path}",
+            )
+
+        try:
+            conn = sqlite3.connect(str(db_path))
+            row = conn.execute(
+                """SELECT started_at, status, error, duration_seconds,
+                          source_records_new, raw_new
+                   FROM collector_run
+                   WHERE source_id = ?
+                   ORDER BY run_id DESC LIMIT 1""",
+                (source_id,),
+            ).fetchone()
+            conn.close()
+        except sqlite3.Error as e:
+            return SourceStatus(
+                source_id=source_id, garden=self.garden_id,
+                authority="", description="",
+                status="error",
+                error=f"DB query failed: {e}",
+            )
+
+        if row is None:
+            # Fallback: check raw directory mtime for this source
+            raw_dir = self.path / "warehouse" / "raw" / source_id
+            if raw_dir.exists():
+                newest_mtime = None
+                for fname in os.listdir(raw_dir):
+                    fpath = raw_dir / fname
+                    try:
+                        mt = os.path.getmtime(fpath)
+                        if newest_mtime is None or mt > newest_mtime:
+                            newest_mtime = mt
+                    except OSError:
+                        continue
+                if newest_mtime is not None:
+                    last_good = datetime.fromtimestamp(newest_mtime, tz=timezone.utc)
+                    age = _age_since(last_good)
+                    is_stale = age is not None and age > max_staleness
+                    return SourceStatus(
+                        source_id=source_id, garden=self.garden_id,
+                        authority="", description="",
+                        status="stale" if is_stale else "ok",
+                        last_good=last_good,
+                        age=age,
+                        error="No collector_run entries (raw fallback)",
+                    )
+
+            return SourceStatus(
+                source_id=source_id, garden=self.garden_id,
+                authority="", description="",
+                status="unknown",
+                error="No runs recorded",
+            )
+
+        started_at, status_str, error, duration, records_new, raw_new = row
+        last_good = _parse_ts(started_at)
+        age = _age_since(last_good)
+        is_stale = age is not None and age > max_staleness
+
+        if status_str == "error":
+            resolved = "error"
+        elif is_stale:
+            resolved = "stale"
+        elif status_str == "running":
+            resolved = "stale"
+        else:
+            resolved = "ok"
+
+        return SourceStatus(
+            source_id=source_id, garden=self.garden_id,
+            authority="", description="",
+            status=resolved,
+            last_good=last_good,
+            age=age,
+            records=records_new,
+            error=error,
+            details={"db_status": status_str, "duration": duration, "raw_new": raw_new},
+        )
+
+    def read_raw_mtime(self, health_config: dict) -> SourceStatus:
+        """Check file modification times in a raw directory."""
+        raw_dir = self.path / health_config.get("directory", "data/raw")
+        max_staleness = _parse_duration(health_config.get("max_staleness", "48h"))
+
+        if not raw_dir.exists():
+            return SourceStatus(
+                source_id="", garden=self.garden_id,
+                authority="", description="",
+                status="unknown",
+                error=f"Raw directory not found: {raw_dir}",
+            )
+
+        # Find most recent file
+        newest_mtime = None
+        file_count = 0
+        for root, dirs, files in os.walk(raw_dir):
+            for fname in files:
+                fpath = os.path.join(root, fname)
+                try:
+                    mt = os.path.getmtime(fpath)
+                    file_count += 1
+                    if newest_mtime is None or mt > newest_mtime:
+                        newest_mtime = mt
+                except OSError:
+                    continue
+
+        if newest_mtime is None:
+            return SourceStatus(
+                source_id="", garden=self.garden_id,
+                authority="", description="",
+                status="unknown",
+                error="No files in raw directory",
+            )
+
+        last_good = datetime.fromtimestamp(newest_mtime, tz=timezone.utc)
+        age = _age_since(last_good)
+        is_stale = age is not None and age > max_staleness
+
+        return SourceStatus(
+            source_id="", garden=self.garden_id,
+            authority="", description="",
+            status="stale" if is_stale else "ok",
+            last_good=last_good,
+            age=age,
+            records=file_count,
+        )
+
+    def read_pid_file(self, health_config: dict) -> SourceStatus:
+        """Check if a PID file points to a live process."""
+        pid_path = self.path / health_config["file"]
+
+        if not pid_path.exists():
+            return SourceStatus(
+                source_id="", garden=self.garden_id,
+                authority="", description="",
+                status="unknown",
+                error="No PID file",
+            )
+
+        try:
+            pid = int(pid_path.read_text().strip())
+        except (ValueError, OSError):
+            return SourceStatus(
+                source_id="", garden=self.garden_id,
+                authority="", description="",
+                status="error",
+                error="Invalid PID file",
+            )
+
+        try:
+            os.kill(pid, 0)
+            return SourceStatus(
+                source_id="", garden=self.garden_id,
+                authority="", description="",
+                status="ok",
+                details={"pid": pid},
+            )
+        except ProcessLookupError:
+            return SourceStatus(
+                source_id="", garden=self.garden_id,
+                authority="", description="",
+                status="stale",
+                error=f"Process {pid} not running (stale PID)",
+            )
+        except PermissionError:
+            return SourceStatus(
+                source_id="", garden=self.garden_id,
+                authority="", description="",
+                status="ok",
+                details={"pid": pid},
+            )
