@@ -25,6 +25,7 @@ import json
 import os
 import secrets
 import sys
+import threading
 import time
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -43,6 +44,13 @@ from powops.config import STATE_DIR
 PORT = int(os.environ.get("POWOPS_PORT", "8796"))
 STATIC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 MANIFEST = os.path.join(ROOT, "powops", "sources.yaml")
+
+
+def _clamp_days(val, default=7, lo=1, hi=365):
+    try:
+        return max(lo, min(hi, int(val)))
+    except (ValueError, TypeError):
+        return default
 
 
 def _get_token() -> str:
@@ -72,11 +80,20 @@ class Handler(BaseHTTPRequestHandler):
             return False
         return True
 
+    def _headers(self):
+        """Security headers for all responses."""
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Content-Security-Policy", "default-src 'self'")
+
     def _json(self, obj, code: int = 200):
         data = json.dumps(obj, default=str).encode()
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(data)))
+        self._headers()
         self.end_headers()
         self.wfile.write(data)
 
@@ -86,6 +103,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "text/html")
         self.send_header("Content-Length", str(len(data)))
+        self._headers()
         self.end_headers()
         self.wfile.write(data)
 
@@ -118,7 +136,7 @@ class Handler(BaseHTTPRequestHandler):
         if u.path == "/api/history":
             source = arg("source") or None
             garden = arg("garden") or None
-            days = int(arg("days", "7"))
+            days = _clamp_days(arg("days", "7"))
             status_f = arg("status") or None
             entries = get_history(source_id=source, garden=garden,
                                   days=days, status_filter=status_f)
@@ -129,13 +147,13 @@ class Handler(BaseHTTPRequestHandler):
             source = arg("source")
             if not source:
                 return self._json({"error": "missing ?source="}, 400)
-            days = int(arg("days", "7"))
+            days = _clamp_days(arg("days", "7"))
             timeline = get_source_timeline(source, days=days)
             return self._json({"source": source, "timeline": timeline})
 
         # Uptime stats
         if u.path == "/api/uptime":
-            days = int(arg("days", "7"))
+            days = _clamp_days(arg("days", "7"))
             results = check_all(MANIFEST)
             stats = {}
             for r in results:
@@ -145,14 +163,14 @@ class Handler(BaseHTTPRequestHandler):
 
         # Volume summary
         if u.path == "/api/volume":
-            days = int(arg("days", "7"))
+            days = _clamp_days(arg("days", "7"))
             summary = get_volume_summary(days=days)
             return self._json({"days": days, "sources": summary})
 
         # Volume history for one source
         if u.path.startswith("/api/volume/"):
             source = u.path.split("/api/volume/", 1)[1]
-            days = int(arg("days", "14"))
+            days = _clamp_days(arg("days", "14"))
             history = get_volume_history(source, days=days)
             return self._json({"source": source, "days": days, "history": history})
 
@@ -187,13 +205,17 @@ class Handler(BaseHTTPRequestHandler):
 
 # --- 30s TTL cache for /api/status ---
 _status_cache = {"data": None, "ts": 0}
+_status_lock = threading.Lock()
 
 
 def _cached_status() -> dict:
     now = time.time()
     if _status_cache["data"] and now - _status_cache["ts"] < 30:
         return _status_cache["data"]
-    results = check_all(MANIFEST)
+    with _status_lock:
+        if _status_cache["data"] and now - _status_cache["ts"] < 30:
+            return _status_cache["data"]
+        results = check_all(MANIFEST)
     sources = []
     for r in results:
         sources.append({
@@ -220,6 +242,5 @@ def _cached_status() -> dict:
 
 
 if __name__ == "__main__":
-    print(f"powops dashboard token: {TOKEN}", flush=True)
-    print(f"http://localhost:{PORT}/?token={TOKEN}", flush=True)
+    print(f"POWOps dashboard listening on 127.0.0.1:{PORT}", flush=True)
     ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
