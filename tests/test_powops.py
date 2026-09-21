@@ -147,7 +147,7 @@ class TestHeartbeatRead:
             "max_staleness": "10m",
         })
         assert status.status == "ok"
-        assert status.last_good is not None
+        assert status.last_success is not None
         assert status.age is not None
         assert status.age < timedelta(minutes=1)
 
@@ -388,7 +388,7 @@ class TestStatusRendering:
             SourceStatus(source_id="test_src", garden="test_garden",
                          authority="Test Auth", description="Test source",
                          status="ok",
-                         last_good=datetime.now(timezone.utc),
+                         last_success=datetime.now(timezone.utc),
                          age=timedelta(minutes=2)),
         ]
         table = render_status_table(results, use_color=False)

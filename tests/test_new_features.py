@@ -55,7 +55,7 @@ def _make_status(source_id, garden="test", status="ok", records=None, error=None
         authority="test",
         description="test source",
         status=status,
-        last_good=datetime.now(timezone.utc),
+        last_success=datetime.now(timezone.utc),
         age=timedelta(minutes=2),
         records=records,
         error=error,

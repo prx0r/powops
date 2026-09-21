@@ -26,9 +26,11 @@ class SourceStatus:
     authority: str
     description: str
     status: str  # ok, stale, blocked, no_key, not_installed, error, unknown
-    last_good: Optional[datetime] = None
+    last_attempt: Optional[datetime] = None  # when we last tried to collect
+    last_success: Optional[datetime] = None  # when we last got valid data
     age: Optional[timedelta] = None
     records: Optional[int] = None
+    bytes_new: Optional[int] = None
     error: Optional[str] = None
     details: dict = field(default_factory=dict)
 
@@ -128,7 +130,7 @@ class GardenReader:
             source_id="", garden=self.garden_id,
             authority="", description="",
             status="stale" if is_stale else "ok",
-            last_good=heartbeat_at,
+            last_success=heartbeat_at,
             age=age,
             details=stats,
         )
@@ -205,7 +207,7 @@ class GardenReader:
                         source_id=source_id, garden=self.garden_id,
                         authority="", description="",
                         status="stale" if is_stale else "ok",
-                        last_good=last_good,
+                        last_success=last_good,
                         age=age,
                         error="No collector_run entries (raw fallback)",
                     )
@@ -235,7 +237,7 @@ class GardenReader:
             source_id=source_id, garden=self.garden_id,
             authority="", description="",
             status=resolved,
-            last_good=last_good,
+            last_success=last_good,
             age=age,
             records=records_new,
             error=error,
@@ -285,7 +287,7 @@ class GardenReader:
             source_id="", garden=self.garden_id,
             authority="", description="",
             status="stale" if is_stale else "ok",
-            last_good=last_good,
+            last_success=last_good,
             age=age,
             records=file_count,
         )

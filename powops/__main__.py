@@ -103,7 +103,7 @@ def main():
                         "source_id": r.source_id,
                         "garden": r.garden,
                         "status": r.status,
-                        "last_good": r.last_good.isoformat() if r.last_good else None,
+                        "last_success": r.last_success.isoformat() if r.last_success else None,
                         "age_seconds": int(r.age.total_seconds()) if r.age else None,
                         "records": r.records,
                         "error": r.error,

@@ -26,6 +26,7 @@ from powops.history import get_history, get_source_timeline, get_uptime_stats
 from powops.volume import get_volume_summary
 from powops.schema import list_schemas, get_schema_snapshot
 from powops.alerts import get_alert_state
+from powops.incidents import get_incidents, get_open_incidents
 from powops.config import STATE_DIR
 
 MANIFEST = os.path.join(ROOT, "powops", "sources.yaml")
@@ -83,7 +84,7 @@ async def powops_check(source_id: str) -> str:
         "authority": r.authority,
         "description": r.description,
         "status": r.status,
-        "last_good": r.last_good.isoformat() if r.last_good else None,
+        "last_success": r.last_success.isoformat() if r.last_success else None,
         "age_seconds": int(r.age.total_seconds()) if r.age is not None else None,
         "records": r.records,
         "error": r.error,
@@ -186,6 +187,51 @@ async def powops_sources() -> str:
             "status": r.status,
         })
     return json.dumps({"sources": sources}, indent=2)
+
+
+@mcp.tool()
+async def powops_incidents(status: str = "open", garden: str = "") -> str:
+    """Query incidents. Shows open, resolved, or all incidents across gardens.
+
+    Args:
+        status: Filter by status — "open", "resolved", or "all" (default "open")
+        garden: Filter to one garden
+    """
+    if status == "all":
+        incidents = await _run_sync(get_incidents, garden=garden or None)
+    else:
+        incidents = await _run_sync(get_incidents, status=status, garden=garden or None)
+    return json.dumps({"count": len(incidents), "incidents": incidents}, indent=2)
+
+
+@mcp.tool()
+async def powops_coverage() -> str:
+    """Show coverage across all gardens — how many sources are installed, healthy, blocked, or missing."""
+    results = await _run_sync(check_all, MANIFEST)
+    gardens = {}
+    for r in results:
+        if r.garden not in gardens:
+            gardens[r.garden] = {"installed": 0, "healthy": 0, "stale": 0, "error": 0, "unknown": 0, "not_installed": 0}
+        g = gardens[r.garden]
+        g["installed"] += 1
+        if r.status == "ok":
+            g["healthy"] += 1
+        elif r.status == "stale":
+            g["stale"] += 1
+        elif r.status == "error":
+            g["error"] += 1
+        elif r.status == "unknown":
+            g["unknown"] += 1
+        elif r.status == "not_installed":
+            g["not_installed"] += 1
+    total = len(results)
+    healthy = sum(1 for r in results if r.status == "ok")
+    return json.dumps({
+        "total": total,
+        "healthy": healthy,
+        "health_pct": round(100 * healthy / total, 1) if total else 0,
+        "gardens": gardens,
+    }, indent=2)
 
 
 async def main():

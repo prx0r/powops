@@ -118,7 +118,7 @@ def render_status_table(
     header = (
         f"  {'GARDEN':<{col_w['garden']}}"
         f"{'SOURCE':<{col_w['source']}}"
-        f"{'LAST GOOD':<{col_w['last_good']}}"
+        f"{'LAST SUCCESS':<{col_w['last_good']}}"
         f"{'AGE':<{col_w['age']}}"
         f"{'STATUS':<{col_w['status']}}"
     )
@@ -140,7 +140,7 @@ def render_status_table(
             icon = STATUS_ICONS.get(r.status, "?")
             colored_status = _colorize(f"{icon:>{col_w['status']-1}}", r.status) if use_color else f"{icon:>{col_w['status']-1}}"
             age_str = _format_age(r.age)
-            ts_str = _format_ts(r.last_good)
+            ts_str = _format_ts(r.last_success)
 
             line = (
                 f"  {garden_label:<{col_w['garden']}}"
@@ -201,8 +201,8 @@ def render_json(results: List[SourceStatus]) -> str:
             "authority": r.authority,
             "status": r.status,
         }
-        if r.last_good:
-            entry["last_good"] = r.last_good.isoformat()
+        if r.last_success:
+            entry["last_success"] = r.last_success.isoformat()
         if r.age:
             entry["age_seconds"] = int(r.age.total_seconds())
         if r.error:

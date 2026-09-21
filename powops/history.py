@@ -44,8 +44,8 @@ def record_check(results: List[SourceStatus]) -> None:
                 "garden": r.garden,
                 "status": r.status,
             }
-            if r.last_good:
-                entry["last_good"] = r.last_good.isoformat()
+            if r.last_success:
+                entry["last_success"] = r.last_success.isoformat()
             if r.age is not None:
                 entry["age_seconds"] = int(r.age.total_seconds())
             if r.records is not None:

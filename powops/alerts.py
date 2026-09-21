@@ -72,7 +72,7 @@ def _build_alert_payload(
         "severity": severity,
         "timestamp": now,
         "details": {
-            "last_good": status_obj.last_good.isoformat() if status_obj and status_obj.last_good else None,
+            "last_success": status_obj.last_success.isoformat() if status_obj and status_obj.last_success else None,
             "age_seconds": int(status_obj.age.total_seconds()) if status_obj and status_obj.age else None,
             "error": status_obj.error if status_obj else None,
             "records": status_obj.records if status_obj else None,
@@ -96,7 +96,7 @@ def _build_recovery_payload(
         "severity": "info",
         "timestamp": now,
         "details": {
-            "last_good": status_obj.last_good.isoformat() if status_obj and status_obj.last_good else None,
+            "last_success": status_obj.last_success.isoformat() if status_obj and status_obj.last_success else None,
             "age_seconds": int(status_obj.age.total_seconds()) if status_obj and status_obj.age else None,
             "records": status_obj.records if status_obj else None,
         },
