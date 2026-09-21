@@ -9,7 +9,7 @@ across all Layer 1 data ingestion.
 
 ## Live
 
-**https://admin.pow.systems/?token=I_FXTd9KaWsPbj8AW1fDRbOXI0yTwtjT**
+**https://admin.pow.systems/**
 
 ## What It Does
 
