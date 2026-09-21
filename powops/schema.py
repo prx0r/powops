@@ -14,7 +14,7 @@ from typing import Optional
 from .garden import SourceStatus
 
 
-SCHEMA_DIR = Path(__file__).parent / "schemas"
+SCHEMA_DIR = Path(__file__).parent.parent / "schemas"
 
 
 def _ensure_schema_dir():

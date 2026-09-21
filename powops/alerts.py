@@ -18,7 +18,7 @@ from typing import List, Optional
 from .garden import SourceStatus
 
 
-ALERT_STATE_FILE = Path(__file__).parent / "alert_state.json"
+ALERT_STATE_FILE = Path(__file__).parent.parent / "alert_state.json"
 
 
 def _load_alert_state() -> dict:

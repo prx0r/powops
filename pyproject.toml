@@ -11,3 +11,10 @@ dependencies = [
 dev = [
     "pytest",
 ]
+
+[project.scripts]
+powops = "powops.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["powops*"]
+exclude = ["tests*", "deploy*", "history*", "volume*", "schemas*"]

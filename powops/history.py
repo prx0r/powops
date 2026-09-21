@@ -24,7 +24,7 @@ from typing import List, Optional
 from .garden import SourceStatus
 
 
-HISTORY_DIR = Path(__file__).parent / "history"
+HISTORY_DIR = Path(__file__).parent.parent / "history"
 
 
 def _ensure_history_dir():

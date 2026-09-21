@@ -13,7 +13,7 @@ from typing import List, Optional
 from .garden import SourceStatus
 
 
-VOLUME_DIR = Path(__file__).parent / "volume"
+VOLUME_DIR = Path(__file__).parent.parent / "volume"
 
 
 def _ensure_volume_dir():
