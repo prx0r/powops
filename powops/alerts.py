@@ -16,9 +16,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from .garden import SourceStatus
-
-
-ALERT_STATE_FILE = Path(__file__).parent.parent / "alert_state.json"
+from .config import ALERT_STATE_FILE
 
 
 def _load_alert_state() -> dict:

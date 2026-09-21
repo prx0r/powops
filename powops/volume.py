@@ -11,9 +11,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from .garden import SourceStatus
-
-
-VOLUME_DIR = Path(__file__).parent.parent / "volume"
+from .config import VOLUME_DIR
 
 
 def _ensure_volume_dir():

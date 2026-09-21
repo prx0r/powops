@@ -22,9 +22,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from .garden import SourceStatus
-
-
-HISTORY_DIR = Path(__file__).parent.parent / "history"
+from .config import HISTORY_DIR
 
 
 def _ensure_history_dir():

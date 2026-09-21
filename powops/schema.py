@@ -12,9 +12,7 @@ from pathlib import Path
 from typing import Optional
 
 from .garden import SourceStatus
-
-
-SCHEMA_DIR = Path(__file__).parent.parent / "schemas"
+from .config import SCHEMA_DIR
 
 
 def _ensure_schema_dir():
