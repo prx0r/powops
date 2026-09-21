@@ -17,4 +17,4 @@ powops = "powops.__main__:main"
 
 [tool.setuptools.packages.find]
 include = ["powops*"]
-exclude = ["tests*", "deploy*", "history*", "volume*", "schemas*"]
+exclude = ["tests*", "deploy*", "web*", "history*", "volume*", "schemas*"]

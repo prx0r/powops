@@ -1,0 +1,14 @@
+[Unit]
+Description=POWOPS Dashboard
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/ubuntu/powops
+ExecStart=/usr/bin/python3 -u web/server.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target

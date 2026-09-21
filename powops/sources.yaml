@@ -38,14 +38,12 @@ gardens:
     description: UK physical capacity / labour / infrastructure / policy
     health_check: raw_mtime
     storage: data/raw/
-    status: not_installed
 
   powstock:
     path: /home/ubuntu/powstock
     description: UK public-market / corporate / ownership / microstructure
-    health_check: heartbeat_files
-    storage: warehouse/raw/
-    status: not_installed
+    health_check: raw_mtime
+    storage: data/raw/
 
 sources:
   # ═══════════════════════════════════════════════════════════
@@ -148,17 +146,6 @@ sources:
       file: warehouse/chain_state_heartbeat.json
       max_staleness: 10m
 
-  - id: daemon
-    garden: powpowpow
-    authority: powpowpow
-    type: process
-    description: Master daemon supervising collectors
-    cadence: continuous
-    health:
-      check: pid_file
-      file: daemon.pid
-      max_staleness: 2m
-
   # ═══════════════════════════════════════════════════════════
   # REPAIR — physical asset / failure / parts / resale
   # ═══════════════════════════════════════════════════════════
@@ -174,113 +161,241 @@ sources:
       source_id: open_repair
       max_staleness: 48h
 
-  - id: cex_pricing
+  - id: ebay_uk
     garden: repair
-    authority: CeX UK
+    authority: eBay UK
     type: scrape
-    description: Used electronics buy/sell pricing across UK
+    description: UK eBay listings for repair/parts pricing
     cadence: 6h
     health:
       check: collector_db
-      source_id: cex
+      source_id: ebay_uk
       max_staleness: 12h
 
-  - id: trade_pricing
+  - id: dvla
     garden: repair
-    authority: Screwfix/Toolstation
-    type: scrape
-    description: UK trade pricing (batteries, motors, switches, tools)
-    cadence: 12h
-    health:
-      check: collector_db
-      source_id: trade
-      max_staleness: 24h
-
-  - id: robotshop
-    garden: repair
-    authority: RobotShop UK
-    type: scrape
-    description: Robot components (actuators, controllers, sensors)
-    cadence: 12h
-    health:
-      check: collector_db
-      source_id: robotshop
-      max_staleness: 24h
-
-  - id: partsdb
-    garden: repair
-    authority: PartsDB.io
+    authority: DVLA
     type: api
-    description: Electronic component cross-references and pricing
-    cadence: 24h
-    api_key_env: PARTSDB_API_KEY
-    health:
-      check: collector_db
-      source_id: partsdb
-      max_staleness: 48h
-
-  - id: opss_recalls
-    garden: repair
-    authority: OPSS UK
-    type: html_parse
-    description: UK product safety recalls
+    description: UK vehicle registration and MOT data
     cadence: 24h
     health:
       check: collector_db
-      source_id: opss
+      source_id: dvla
       max_staleness: 48h
 
-  - id: repair_daemon
+  - id: land_registry
     garden: repair
-    authority: repair
-    type: process
-    description: Repair Garden collector daemon
-    cadence: continuous
-    health:
-      check: pid_file
-      file: repair.pid
-      max_staleness: 5m
-
-  # ═══════════════════════════════════════════════════════════
-  # POWUK — UK physical economy (placeholder)
-  # ═══════════════════════════════════════════════════════════
-
-  - id: powuk_neso
-    garden: powuk
-    authority: NESO
+    authority: HM Land Registry
     type: csv
-    description: UK grid connection queue
-    cadence: daily
-    status: not_installed
+    description: UK property transaction data
+    cadence: 24h
+    health:
+      check: collector_db
+      source_id: land_registry
+      max_staleness: 48h
+
+  - id: planning_data
+    garden: repair
+    authority: Planning Data
+    type: api
+    description: UK planning applications and approvals
+    cadence: 24h
+    health:
+      check: collector_db
+      source_id: planning_data
+      max_staleness: 48h
+
+  - id: eprel
+    garden: repair
+    authority: EU EPREL
+    type: api
+    description: EU product energy register
+    cadence: 24h
+    health:
+      check: collector_db
+      source_id: eprel
+      max_staleness: 48h
+
+  - id: france_repairability
+    garden: repair
+    authority: France Repairability
+    type: api
+    description: French repairability index scores
+    cadence: 24h
+    health:
+      check: collector_db
+      source_id: france_repairability
+      max_staleness: 48h
+
+  # ═══════════════════════════════════════════════════════════
+  # POWUK — UK physical capacity / labour / infrastructure
+  # ═══════════════════════════════════════════════════════════
+
+  - id: neso_demand
+    garden: powuk
+    authority: National Grid ESO
+    type: api
+    description: UK electricity demand (hourly)
+    cadence: hourly
     health:
       check: raw_mtime
-      directory: data/raw/neso
+      directory: data/raw/neso_demand
       max_staleness: 48h
 
-  - id: powuk_companies_house
+  - id: neso_generation
     garden: powuk
+    authority: National Grid ESO
+    type: api
+    description: UK generation mix — wind/solar/gas (hourly)
+    cadence: hourly
+    health:
+      check: raw_mtime
+      directory: data/raw/neso_generation
+      max_staleness: 48h
+
+  - id: pvlive
+    garden: powuk
+    authority: Sheffield Solar / PV Live
+    type: api
+    description: Actual UK solar output (hourly)
+    cadence: hourly
+    health:
+      check: raw_mtime
+      directory: data/raw/pvlive
+      max_staleness: 48h
+
+  - id: planning_apps
+    garden: powuk
+    authority: Planning Data
+    type: api
+    description: UK planning applications (2h)
+    cadence: 2h
+    health:
+      check: raw_mtime
+      directory: data/raw/planning_apps
+      max_staleness: 48h
+
+  - id: ons_labour
+    garden: powuk
+    authority: Office for National Statistics
+    type: csv
+    description: UK labour market data (175K rows)
+    cadence: daily
+    health:
+      check: raw_mtime
+      directory: data/raw/ons_labour
+      max_staleness: 168h
+
+  - id: apar
+    garden: powuk
+    authority: Education and Skills Funding Agency
+    type: api
+    description: UK training providers (1,432)
+    cadence: daily
+    health:
+      check: raw_mtime
+      directory: data/raw/apar
+      max_staleness: 168h
+
+  - id: ofqual
+    garden: powuk
+    authority: Ofqual
+    type: api
+    description: UK qualifications register (10,000)
+    cadence: daily
+    health:
+      check: raw_mtime
+      directory: data/raw/ofqual
+      max_staleness: 168h
+
+  - id: contracts_finder
+    garden: powuk
+    authority: Contracts Finder
+    type: api
+    description: UK public procurement (2h)
+    cadence: 2h
+    health:
+      check: raw_mtime
+      directory: data/raw/contracts_finder
+      max_staleness: 48h
+
+  # ═══════════════════════════════════════════════════════════
+  # POWSTOCK — UK capital markets / corporate / ownership
+  # ═══════════════════════════════════════════════════════════
+
+  - id: stooq_prices
+    garden: powstock
+    authority: Stooq
+    type: csv
+    description: UK equity daily OHLCV prices
+    cadence: daily
+    health:
+      check: raw_mtime
+      directory: data/raw/stooq_prices
+      max_staleness: 48h
+
+  - id: yahoo_prices
+    garden: powstock
+    authority: Yahoo Finance
+    type: api
+    description: UK equity prices (backup source)
+    cadence: daily
+    health:
+      check: raw_mtime
+      directory: data/raw/yahoo_prices
+      max_staleness: 48h
+
+  - id: rns_announcements
+    garden: powstock
+    authority: Investegate / LSE
+    type: scrape
+    description: UK listed company RNS announcements
+    cadence: 6h
+    health:
+      check: raw_mtime
+      directory: data/raw/rns_announcements
+      max_staleness: 12h
+
+  - id: companies_house
+    garden: powstock
     authority: Companies House
     type: api
     description: UK company filings and director changes
     cadence: daily
-    status: not_installed
     health:
       check: raw_mtime
       directory: data/raw/companies_house
+      max_staleness: 168h
+
+  - id: fca_pdmr
+    garden: powstock
+    authority: Investegate / FCA
+    type: scrape
+    description: FCA PDMR director transactions
+    cadence: daily
+    health:
+      check: raw_mtime
+      directory: data/raw/fca_pdmr
       max_staleness: 48h
 
-  # ═══════════════════════════════════════════════════════════
-  # POWSTOCK — UK capital markets (placeholder)
-  # ═══════════════════════════════════════════════════════════
-
-  - id: powstock_prices
+  - id: fca_short_interest
     garden: powstock
-    authority: LSE
+    authority: FCA
     type: api
-    description: UK equity prices and L2 order books
-    cadence: 60s
-    status: not_installed
+    description: FCA short interest positions
+    cadence: daily
     health:
-      check: heartbeat
-      file: warehouse/heartbeat.json
-      max_staleness: 5m
+      check: raw_mtime
+      directory: data/raw/fca_short_interest
+      max_staleness: 48h
+
+  - id: psc_snapshot
+    garden: powstock
+    authority: Companies House
+    type: api
+    description: Persons of Significant Control snapshot
+    cadence: daily
+    health:
+      check: raw_mtime
+      directory: data/raw/psc_snapshot
+      max_staleness: 168h

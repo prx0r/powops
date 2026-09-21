@@ -149,14 +149,32 @@ class GardenReader:
 
         try:
             conn = sqlite3.connect(str(db_path))
-            row = conn.execute(
-                """SELECT started_at, status, error, duration_seconds,
-                          source_records_new, raw_new
-                   FROM collector_run
-                   WHERE source_id = ?
-                   ORDER BY run_id DESC LIMIT 1""",
-                (source_id,),
-            ).fetchone()
+            # Try collector_run first, then collection_runs (repair uses the latter)
+            row = None
+            for table in ("collector_run", "collection_runs"):
+                try:
+                    if table == "collector_run":
+                        row = conn.execute(
+                            """SELECT started_at, status, error, duration_seconds,
+                                      source_records_new, raw_new
+                               FROM collector_run
+                               WHERE source_id = ?
+                               ORDER BY run_id DESC LIMIT 1""",
+                            (source_id,),
+                        ).fetchone()
+                    else:
+                        row = conn.execute(
+                            """SELECT started_at, status, error, duration_seconds,
+                                      rows_collected, rows_inserted
+                               FROM collection_runs
+                               WHERE source_id = ?
+                               ORDER BY id DESC LIMIT 1""",
+                            (source_id,),
+                        ).fetchone()
+                    if row is not None:
+                        break
+                except sqlite3.OperationalError:
+                    continue
             conn.close()
         except sqlite3.Error as e:
             return SourceStatus(
