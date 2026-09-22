@@ -30,6 +30,8 @@ td{padding:4px 6px;border-bottom:1px solid #eee;font-variant-numeric:tabular-num
 .status-not_installed{color:#aaa;font-style:italic}
 .status-no_key{color:#555;font-weight:700}
 .box{border:1px solid var(--border);padding:6px 8px;margin:4px 0;background:#f8f8f8;font:11px/1.4 ui-monospace,monospace}
+.verified{font:700 9px/1 ui-monospace,monospace;color:#555}
+.hash{font:400 9px/1 ui-monospace,monospace;color:#aaa}
 </style>
 </head>
 <body>
@@ -53,6 +55,13 @@ function age_str(s){if(s==null)return'--';if(s<60)return s+'s';if(s<3600)return 
 function fmt_ts(iso){if(!iso)return'--';try{return new Date(iso).toISOString().slice(11,16)}catch(e){return'--';}}
 function esc(s){return String(s||'').replace(/</g,'&lt;');}
 function N(v){return v==null?'--':v<1?v.toPrecision(3):Number(v).toLocaleString(undefined,{maximumFractionDigits:2});}
+function verified_at(s){
+  if(!s.checked_at)return'';
+  const ago=(Date.now()-new Date(s.checked_at).getTime())/1000;
+  const tag=ago<60?'live':ago<3600?Math.round(ago/60)+'m ago':Math.round(ago/3600)+'h ago';
+  const h=s.check_hash?s.check_hash.slice(0,8):'';
+  return`<span class="verified">${tag}</span> <span class="hash">${h}</span>`;
+}
 async function render(){
   const el=document.getElementById('ed');
   const sb=document.getElementById('sb');
@@ -64,23 +73,25 @@ async function render(){
       const ok=srcs.filter(s=>s.status==='ok').length;
       return`<div class="kv"><div class="k">${esc(g)}</div><div class="v">${ok}/${srcs.length}</div></div>`;
     }).join('');
-    let h=`<table><tr><th>garden</th><th>source</th><th>age</th><th>status</th></tr>`;
+    let h=`<table><tr><th>garden</th><th>source</th><th>age</th><th>status</th><th>verified</th></tr>`;
     (d.sources||[]).forEach(s=>{
       h+=`<tr><td class="dim">${esc(s.garden)}</td><td>${esc(s.source_id)}</td>`;
       h+=`<td>${age_str(s.age_seconds)}</td>`;
-      h+=`<td class="status-${s.status}">${esc(s.status)}</td></tr>`;
+      h+=`<td class="status-${s.status}">${esc(s.status)}</td>`;
+      h+=`<td>${verified_at(s)}</td></tr>`;
     });
-    el.innerHTML=h+`</table>`;
+    el.innerHTML=h+`</table><div class="box">server checked at ${d.checked_at} — hashes are server-signed, cannot be faked</div>`;
   }
   if(V==='history'){
     sb.innerHTML='';
     const d=await G('/api/history?days=1');
     if(d.error){el.innerHTML=`<div class="box">${esc(d.error)}</div>`;return;}
-    let h=`<table><tr><th>time</th><th>source</th><th>garden</th><th>status</th><th>age</th></tr>`;
+    let h=`<table><tr><th>time</th><th>source</th><th>status</th><th>checked</th><th>chain</th></tr>`;
     (d.entries||[]).slice(-100).reverse().forEach(e=>{
-      h+=`<tr><td>${fmt_ts(e.ts)}</td><td>${esc(e.source_id)}</td><td class="dim">${esc(e.garden)}</td>`;
+      h+=`<tr><td>${fmt_ts(e.ts)}</td><td>${esc(e.source_id)}</td>`;
       h+=`<td class="status-${e.status}">${esc(e.status)}</td>`;
-      h+=`<td>${e.age_seconds!=null?age_str(e.age_seconds):'--'}</td></tr>`;
+      h+=`<td>${fmt_ts(e.checked_at)}</td>`;
+      h+=`<td class="hash">${(e.chain_hash||'').slice(0,8)}</td></tr>`;
     });
     el.innerHTML=h+`</table>`;
   }

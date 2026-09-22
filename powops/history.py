@@ -6,15 +6,19 @@ Each check produces a line like:
   "source_id": "venue_l2",
   "garden": "powpowpow",
   "status": "ok",
-  "last_good": "2026-09-21T18:28:00Z",
+  "last_success": "2026-09-21T18:28:00Z",
   "age_seconds": 120,
   "records": null,
-  "error": null
+  "error": null,
+  "check_hash": "a1b2c3...",
+  "chain_hash": "d4e5f6..."
 }
 
 History files are partitioned by date: history/YYYY-MM-DD.jsonl
+Chain hash links each entry to the previous — tampering breaks the chain.
 """
 
+import hashlib
 import json
 import os
 from datetime import datetime, timedelta, timezone
@@ -24,18 +28,48 @@ from typing import List, Optional
 from .garden import SourceStatus
 from .config import HISTORY_DIR
 
+# Chain state — last hash per file, persisted across writes
+_chain_state: dict = {}
+
 
 def _ensure_history_dir():
     HISTORY_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def _chain_hash(prev_hash: str, entry: dict) -> str:
+    """Compute chain hash linking this entry to the previous one."""
+    payload = prev_hash + json.dumps(entry, sort_keys=True, default=str)
+    return hashlib.sha256(payload.encode()).hexdigest()[:32]
+
+
+def _get_last_chain_hash(path: Path) -> str:
+    """Get the chain hash of the last entry in a history file."""
+    if path in _chain_state:
+        return _chain_state[path]
+    if path.exists():
+        last_line = ""
+        with open(path) as f:
+            for line in f:
+                if line.strip():
+                    last_line = line.strip()
+        if last_line:
+            try:
+                entry = json.loads(last_line)
+                return entry.get("chain_hash", "")
+            except json.JSONDecodeError:
+                pass
+    return ""
+
+
 def record_check(results: List[SourceStatus]) -> None:
-    """Append check results to today's history file."""
+    """Append check results to today's history file with chain hashing."""
     _ensure_history_dir()
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     path = HISTORY_DIR / f"{today}.jsonl"
 
+    prev_hash = _get_last_chain_hash(path)
     now = datetime.now(timezone.utc).isoformat()
+
     with open(path, "a") as f:
         for r in results:
             entry = {
@@ -44,6 +78,8 @@ def record_check(results: List[SourceStatus]) -> None:
                 "garden": r.garden,
                 "status": r.status,
             }
+            if r.checked_at:
+                entry["checked_at"] = r.checked_at.isoformat()
             if r.last_success:
                 entry["last_success"] = r.last_success.isoformat()
             if r.age is not None:
@@ -52,7 +88,16 @@ def record_check(results: List[SourceStatus]) -> None:
                 entry["records"] = r.records
             if r.error:
                 entry["error"] = r.error
+            if r.check_hash:
+                entry["check_hash"] = r.check_hash
+
+            chain = _chain_hash(prev_hash, entry)
+            entry["chain_hash"] = chain
+            prev_hash = chain
+
             f.write(json.dumps(entry) + "\n")
+
+    _chain_state[path] = prev_hash
 
 
 def _load_history_file(path: Path) -> List[dict]:
@@ -69,6 +114,40 @@ def _load_history_file(path: Path) -> List[dict]:
                 except json.JSONDecodeError:
                     continue
     return entries
+
+
+def verify_chain(path: Path) -> dict:
+    """Verify the chain hash integrity of a history file.
+
+    Returns {"ok": True, "entries": N} if chain is valid,
+    or {"ok": False, "broken_at": N, "reason": "..."} if tampered.
+    """
+    entries = _load_history_file(path)
+    if not entries:
+        return {"ok": True, "entries": 0}
+
+    prev_hash = ""
+    for i, entry in enumerate(entries):
+        expected_hash = entry.get("chain_hash")
+        if not expected_hash:
+            return {"ok": False, "broken_at": i, "reason": "missing chain_hash"}
+
+        # Rebuild entry without chain_hash for verification
+        check_entry = {k: v for k, v in entry.items() if k != "chain_hash"}
+        computed = _chain_hash(prev_hash, check_entry)
+
+        if computed != expected_hash:
+            return {
+                "ok": False,
+                "broken_at": i,
+                "reason": f"chain hash mismatch at entry {i}",
+                "expected": expected_hash,
+                "computed": computed,
+            }
+
+        prev_hash = expected_hash
+
+    return {"ok": True, "entries": len(entries)}
 
 
 def get_history(

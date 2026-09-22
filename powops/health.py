@@ -11,6 +11,7 @@ from typing import List, Optional
 from .garden import (
     GardenReader,
     SourceStatus,
+    _compute_check_hash,
     _parse_duration,
     _age_since,
     _parse_ts,
@@ -32,6 +33,7 @@ def check_source(source: dict, readers: dict) -> SourceStatus:
     garden_id = source.get("garden", "")
     health = source.get("health", {})
     check_type = health.get("check", "unknown")
+    now = datetime.now(timezone.utc)
 
     reader = readers.get(garden_id)
 
@@ -44,6 +46,7 @@ def check_source(source: dict, readers: dict) -> SourceStatus:
             authority=source.get("authority", ""),
             description=source.get("description", ""),
             status="not_installed",
+            checked_at=now,
         )
 
     # Source explicitly marked not installed
@@ -54,6 +57,7 @@ def check_source(source: dict, readers: dict) -> SourceStatus:
             authority=source.get("authority", ""),
             description=source.get("description", ""),
             status="not_installed",
+            checked_at=now,
         )
 
     # API key required but not set
@@ -68,6 +72,7 @@ def check_source(source: dict, readers: dict) -> SourceStatus:
                 description=source.get("description", ""),
                 status="no_key",
                 error=f"Missing {api_key_env}",
+                checked_at=now,
             )
 
     if reader is None or not reader.exists():
@@ -78,6 +83,7 @@ def check_source(source: dict, readers: dict) -> SourceStatus:
             description=source.get("description", ""),
             status="unknown",
             error=f"Garden not found at {garden_cfg.get('path', '?')}",
+            checked_at=now,
         )
 
     # Dispatch to the right reader method
@@ -103,6 +109,10 @@ def check_source(source: dict, readers: dict) -> SourceStatus:
     status.source_id = source["id"]
     status.authority = source.get("authority", "")
     status.description = source.get("description", "")
+    status.checked_at = datetime.now(timezone.utc)
+    status.check_hash = _compute_check_hash(
+        source["id"], status.status, status.checked_at.isoformat()
+    )
     return status
 
 

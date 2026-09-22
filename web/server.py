@@ -218,18 +218,7 @@ def _cached_status() -> dict:
         results = check_all(MANIFEST)
     sources = []
     for r in results:
-        sources.append({
-            "source_id": r.source_id,
-            "garden": r.garden,
-            "authority": r.authority,
-            "description": r.description,
-            "status": r.status,
-            "last_attempt": r.last_attempt.isoformat() if r.last_attempt else None,
-            "last_success": r.last_success.isoformat() if r.last_success else None,
-            "age_seconds": int(r.age.total_seconds()) if r.age is not None else None,
-            "records": r.records,
-            "error": r.error,
-        })
+        sources.append(r.to_verified_dict())
     gs = garden_summary(results)
     data = {
         "checked_at": datetime.now(timezone.utc).isoformat(),

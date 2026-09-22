@@ -1,7 +1,9 @@
 """POWOPS MCP Server — Layer 1 observability for the pi agent.
 
 Provides tools for monitoring garden health, querying history,
-and running diagnostics across all POW data sources.
+running diagnostics, and checking data stream freshness.
+
+All timestamps are server-signed with check_hash — cannot be faked.
 
 Usage:
     python3 -m powops.mcp
@@ -22,12 +24,12 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
 from powops.health import check_all, garden_summary, overall_status
-from powops.history import get_history, get_source_timeline, get_uptime_stats
+from powops.history import get_history, get_source_timeline, get_uptime_stats, verify_chain
 from powops.volume import get_volume_summary
 from powops.schema import list_schemas, get_schema_snapshot
 from powops.alerts import get_alert_state
 from powops.incidents import get_incidents, get_open_incidents
-from powops.config import STATE_DIR
+from powops.config import STATE_DIR, HISTORY_DIR
 
 MANIFEST = os.path.join(ROOT, "powops", "sources.yaml")
 
@@ -38,9 +40,11 @@ async def _run_sync(fn, *args, **kwargs):
     return await asyncio.get_event_loop().run_in_executor(None, lambda: fn(*args, **kwargs))
 
 
+# ─── Health ───────────────────────────────────────────────
+
 @mcp.tool()
 async def powops_status(garden: str = "") -> str:
-    """Check health of all POW data sources. Returns status per source with age, garden, and overall system health.
+    """Check health of all POW data sources. Returns server-verified status with check_hash per source.
 
     Args:
         garden: Filter to one garden (powpowpow, repair, powuk, powstock)
@@ -48,16 +52,7 @@ async def powops_status(garden: str = "") -> str:
     results = await _run_sync(check_all, MANIFEST)
     if garden:
         results = [r for r in results if r.garden == garden]
-    sources = []
-    for r in results:
-        sources.append({
-            "source_id": r.source_id,
-            "garden": r.garden,
-            "authority": r.authority,
-            "status": r.status,
-            "age_seconds": int(r.age.total_seconds()) if r.age is not None else None,
-            "error": r.error,
-        })
+    sources = [r.to_verified_dict() for r in results]
     gs = await _run_sync(garden_summary, results)
     return json.dumps({
         "overall": overall_status(results),
@@ -67,8 +62,8 @@ async def powops_status(garden: str = "") -> str:
 
 
 @mcp.tool()
-async def powops_check(source_id: str) -> str:
-    """Check a specific data source by ID. Returns detailed health for that source.
+async def powops_source(source_id: str) -> str:
+    """Check a specific data source by ID. Returns detailed verified health.
 
     Args:
         source_id: Source ID to check (e.g. chain_state, open_repair, neso_demand)
@@ -77,23 +72,14 @@ async def powops_check(source_id: str) -> str:
     match = [r for r in results if r.source_id == source_id]
     if not match:
         return json.dumps({"error": f"source '{source_id}' not found"})
-    r = match[0]
-    return json.dumps({
-        "source_id": r.source_id,
-        "garden": r.garden,
-        "authority": r.authority,
-        "description": r.description,
-        "status": r.status,
-        "last_success": r.last_success.isoformat() if r.last_success else None,
-        "age_seconds": int(r.age.total_seconds()) if r.age is not None else None,
-        "records": r.records,
-        "error": r.error,
-    }, indent=2)
+    return json.dumps(match[0].to_verified_dict(), indent=2)
 
+
+# ─── History & Uptime ─────────────────────────────────────
 
 @mcp.tool()
 async def powops_history(source: str = "", garden: str = "", days: int = 1) -> str:
-    """Query health check history. Shows status transitions over time for sources.
+    """Query health check history with chain hashes for tamper detection.
 
     Args:
         source: Filter to one source
@@ -127,67 +113,7 @@ async def powops_uptime(days: int = 7) -> str:
     return json.dumps({"days": days, "sources": stats}, indent=2)
 
 
-@mcp.tool()
-async def powops_diagnose() -> str:
-    """Run diagnostics: identify stale sources, missing data, and suggest fixes. Returns actionable findings."""
-    results = await _run_sync(check_all, MANIFEST)
-    findings = []
-    for r in results:
-        if r.status == "stale":
-            age_h = r.age.total_seconds() / 3600 if r.age else None
-            findings.append({
-                "severity": "warning",
-                "source": r.source_id,
-                "garden": r.garden,
-                "issue": f"stale for {age_h:.1f}h" if age_h else "stale",
-                "fix": f"check collector in {r.garden}",
-            })
-        elif r.status == "error":
-            findings.append({
-                "severity": "error",
-                "source": r.source_id,
-                "garden": r.garden,
-                "issue": r.error or "unknown error",
-                "fix": f"check logs for {r.garden}/{r.source_id}",
-            })
-        elif r.status == "unknown":
-            findings.append({
-                "severity": "info",
-                "source": r.source_id,
-                "garden": r.garden,
-                "issue": "no data — collector may not be running",
-                "fix": f"start collector for {r.source_id} in {r.garden}",
-            })
-        elif r.status == "no_key":
-            findings.append({
-                "severity": "warning",
-                "source": r.source_id,
-                "garden": r.garden,
-                "issue": "missing API key",
-                "fix": f"set required env var for {r.source_id}",
-            })
-    gs = await _run_sync(garden_summary, results)
-    return json.dumps({
-        "overall": overall_status(results),
-        "findings": findings,
-        "summary": gs,
-    }, indent=2)
-
-
-@mcp.tool()
-async def powops_sources() -> str:
-    """List all configured data sources across all gardens with their authority and cadence."""
-    results = await _run_sync(check_all, MANIFEST)
-    sources = []
-    for r in results:
-        sources.append({
-            "id": r.source_id,
-            "garden": r.garden,
-            "authority": r.authority,
-            "status": r.status,
-        })
-    return json.dumps({"sources": sources}, indent=2)
-
+# ─── Incidents ────────────────────────────────────────────
 
 @mcp.tool()
 async def powops_incidents(status: str = "open", garden: str = "") -> str:
@@ -203,6 +129,8 @@ async def powops_incidents(status: str = "open", garden: str = "") -> str:
         incidents = await _run_sync(get_incidents, status=status, garden=garden or None)
     return json.dumps({"count": len(incidents), "incidents": incidents}, indent=2)
 
+
+# ─── Coverage ─────────────────────────────────────────────
 
 @mcp.tool()
 async def powops_coverage() -> str:
@@ -232,6 +160,69 @@ async def powops_coverage() -> str:
         "health_pct": round(100 * healthy / total, 1) if total else 0,
         "gardens": gardens,
     }, indent=2)
+
+
+# ─── Schemas ──────────────────────────────────────────────
+
+@mcp.tool()
+async def powops_schemas() -> str:
+    """List known schema snapshots across all sources."""
+    schemas = await _run_sync(list_schemas)
+    return json.dumps({"count": len(schemas), "schemas": schemas}, indent=2)
+
+
+# ─── Verify ───────────────────────────────────────────────
+
+@mcp.tool()
+async def powops_verify(days: int = 1) -> str:
+    """Verify chain hash integrity of history files. Detects tampering.
+
+    Args:
+        days: Days back to verify (default 1)
+    """
+    from datetime import datetime, timedelta, timezone
+    now = datetime.now(timezone.utc)
+    results = []
+    for i in range(days):
+        date = (now - timedelta(days=i)).strftime("%Y-%m-%d")
+        path = HISTORY_DIR / f"{date}.jsonl"
+        if path.exists():
+            result = await _run_sync(verify_chain, path)
+            result["date"] = date
+            results.append(result)
+    ok = all(r["ok"] for r in results)
+    return json.dumps({"verified": ok, "files": results}, indent=2)
+
+
+# ─── Sources ──────────────────────────────────────────────
+
+@mcp.tool()
+async def powops_sources() -> str:
+    """List all configured data sources across all gardens with their authority and cadence."""
+    results = await _run_sync(check_all, MANIFEST)
+    sources = [r.to_verified_dict() for r in results]
+    return json.dumps({"sources": sources}, indent=2)
+
+
+# ─── Events ───────────────────────────────────────────────
+
+@mcp.tool()
+async def powops_events(days: int = 1, garden: str = "", event_type: str = "") -> str:
+    """Query recent events from the append-only event stream.
+
+    Args:
+        days: Days back (default 1)
+        garden: Filter to one garden
+        event_type: Filter by event type (e.g. source_stale, incident_opened)
+    """
+    from powops.events import get_events
+    events = await _run_sync(
+        get_events,
+        days=days,
+        garden=garden or None,
+        event_type=event_type or None,
+    )
+    return json.dumps({"count": len(events), "events": events}, indent=2)
 
 
 async def main():

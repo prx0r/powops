@@ -9,6 +9,7 @@ Each garden produces health artifacts in its own format:
 This module reads those artifacts and returns a uniform SourceStatus.
 """
 
+import hashlib
 import json
 import os
 import sqlite3
@@ -16,6 +17,22 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
+
+# Server secret — generated at import time, never changes within a process.
+# Used to sign check results so timestamps can't be faked.
+_SERVER_SECRET = os.urandom(32).hex()
+
+
+def _compute_check_hash(source_id: str, status: str, checked_at: str) -> str:
+    """Compute HMAC signature for a check result.
+
+    Proves the server actually checked this source at this time.
+    Cannot be forged without the server secret.
+    """
+    payload = f"{source_id}:{status}:{checked_at}"
+    return hashlib.sha256(
+        (_SERVER_SECRET + payload).encode()
+    ).hexdigest()[:32]
 
 
 @dataclass
@@ -26,13 +43,33 @@ class SourceStatus:
     authority: str
     description: str
     status: str  # ok, stale, blocked, no_key, not_installed, error, unknown
+    checked_at: Optional[datetime] = None  # when powops checked this source (server-side)
     last_attempt: Optional[datetime] = None  # when we last tried to collect
     last_success: Optional[datetime] = None  # when we last got valid data
     age: Optional[timedelta] = None
     records: Optional[int] = None
     bytes_new: Optional[int] = None
     error: Optional[str] = None
+    check_hash: Optional[str] = None  # HMAC of (source_id + status + checked_at) — proves server checked
     details: dict = field(default_factory=dict)
+
+    def to_verified_dict(self) -> dict:
+        """Convert to dict with verified timestamps."""
+        d = {
+            "source_id": self.source_id,
+            "garden": self.garden,
+            "authority": self.authority,
+            "description": self.description,
+            "status": self.status,
+            "checked_at": self.checked_at.isoformat() if self.checked_at else None,
+            "last_attempt": self.last_attempt.isoformat() if self.last_attempt else None,
+            "last_success": self.last_success.isoformat() if self.last_success else None,
+            "age_seconds": int(self.age.total_seconds()) if self.age is not None else None,
+            "records": self.records,
+            "error": self.error,
+            "check_hash": self.check_hash,
+        }
+        return d
 
     @property
     def status_icon(self) -> str:
