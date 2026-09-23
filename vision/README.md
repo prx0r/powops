@@ -15,6 +15,7 @@ POWOps is the global northstar for all POW repositories. These documents define 
 | `robotprintify.md` | Consumer physical agents — ESP32-based product platform from POW data |
 | `commercial2.md` | Robotics procurement business model — three gardens, four revenue streams |
 | `goldmoat.md` | The flywheel: procurement graph + consumer products + outcome data |
+| `goldmoat2.md` | Spare parts as the first transaction layer — verified compatibility + UK stock |
 
 ## The POW Thesis
 
