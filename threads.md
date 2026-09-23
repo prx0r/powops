@@ -67,6 +67,19 @@ Everything that's unfinished, broken, blocked or waiting on something.
    garden-scoped, but history/volume/uptime still key by bare source_id.
    Full fix needs namespaced IDs + history migration (roadmap 4.2).
 
+## Thread 28: powrobots goldmoat progress (integrated 2026-09-23)
+**Status:** reviewed commits 2e36571 (BOM API + transaction schema + kits) and
+708d08e (supplier infra). powrobots: 42 tests pass, powops view steady 9/15.
+- `powrobots/resolve.py`: resolve_bom, find_substitutes, optimize_bom live.
+- Transaction tables exist: kit 10 rows, kit_component 51 rows (incl. SO-101
+  maintenance kit $8.27 draft, Agent Node plant BOM $3.80). part_order and
+  outcome tables ready at 0 rows — first transaction pending.
+- Supplier tiers defined (API → Apify → manual); scrapers run in GitHub
+  Actions, not on VPS — nothing new for sources.yaml.
+- powops boundary respected: no domain logic absorbed. Monitoring only.
+- Devplan checkpoint 4 (kits available) partially met: kit data exists,
+  0 sold. First paid order is the remaining proof.
+
 ## Thread 1: powuk broken collectors
 
 **Status:** 4 collectors failing
