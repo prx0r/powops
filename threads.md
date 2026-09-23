@@ -36,6 +36,12 @@ Everything that's unfinished, broken, blocked or waiting on something.
 **Fix:** roadmap P2 reconciliation — repair owns its manifest, powops discovers it. Do not hand-edit powops sources.yaml to chase renames; use the migration command with alias mapping when built.
 **Priority:** medium — open_repair (the overlapping source) works with 13K records.
 
+## Thread 25: repos tab needs gh auth on VPS
+**Status:** powops/repos.py verified working (returns commit SHA, CI status, branch). gh CLI installed (2.45.0). No persisted auth — `gh auth status` shows not logged in.
+**Impact:** /api/repos returns "unknown" for all repos until authenticated.
+**Fix:** run `gh auth login` on the VPS as the dashboard user (needs a token with public-repo read). Do NOT commit tokens. Verified 2026-09-23 that the module works when GH_TOKEN is present.
+**Priority:** medium — dashboard completeness, not data collection.
+
 ## Thread 1: powuk broken collectors
 
 **Status:** 4 collectors failing

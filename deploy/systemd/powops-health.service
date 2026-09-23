@@ -6,5 +6,3 @@ After=network.target
 Type=oneshot
 WorkingDirectory=/home/ubuntu/powops
 ExecStart=/usr/bin/python3 -m powops full --no-color
-StandardOutput=append:/var/log/powops-health.log
-StandardError=append:/var/log/powops-health.log
