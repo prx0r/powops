@@ -558,8 +558,8 @@ sources:
     description: UK equity prices (25 tickers, daily OHLCV)
     cadence: daily
     health:
-      check: collector_db
-      source_id: yahoo_finance
+      check: pow_health
+      source_id: yahoo_prices
       max_staleness: 48h
 
   - id: investegate_rns
@@ -569,8 +569,8 @@ sources:
     description: UK listed company RNS announcements
     cadence: 6h
     health:
-      check: collector_db
-      source_id: investegate_rns
+      check: pow_health
+      source_id: rns_announcements
       max_staleness: 12h
 
   - id: companies_house
@@ -581,7 +581,7 @@ sources:
     cadence: daily
     api_key_env: POWSTOCK_COMPANIES_HOUSE_API_KEY
     health:
-      check: collector_db
+      check: pow_health
       source_id: companies_house
       max_staleness: 168h
 
@@ -592,8 +592,8 @@ sources:
     description: FCA PDMR director transactions
     cadence: daily
     health:
-      check: collector_db
-      source_id: investegate_pdmr
+      check: pow_health
+      source_id: fca_pdmr
       max_staleness: 48h
 
   - id: fca_ansp
@@ -603,8 +603,8 @@ sources:
     description: FCA short interest positions (ANSP)
     cadence: daily
     health:
-      check: collector_db
-      source_id: fca_ansp
+      check: pow_health
+      source_id: fca_short_interest
       max_staleness: 48h
 
   - id: takeover_panel
@@ -614,7 +614,7 @@ sources:
     description: Takeover Panel disclosure notices
     cadence: daily
     health:
-      check: collector_db
+      check: pow_health
       source_id: takeover_panel
       max_staleness: 168h
 
@@ -625,7 +625,7 @@ sources:
     description: FCA TR-1 major shareholder notifications
     cadence: daily
     health:
-      check: collector_db
+      check: pow_health
       source_id: fca_tr1
       max_staleness: 168h
 
@@ -636,7 +636,7 @@ sources:
     description: Commodity spot prices (oil, gas, metals)
     cadence: daily
     health:
-      check: collector_db
+      check: pow_health
       source_id: commodity_prices
       max_staleness: 168h
 

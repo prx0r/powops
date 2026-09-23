@@ -94,7 +94,7 @@ def check_source(source: dict, readers: dict) -> SourceStatus:
     elif check_type == "pid_file":
         status = reader.read_pid_file(health)
     elif check_type == "pow_health":
-        status = reader.read_pow_health(source["id"], health)
+        status = reader.read_pow_health(health.get("source_id", source["id"]), health)
     else:
         return SourceStatus(
             source_id=source["id"],
@@ -129,9 +129,36 @@ def check_all(path: Optional[Path] = None) -> List[SourceStatus]:
             readers[gid] = GardenReader(gid, gcfg)
     readers["_config"] = manifest
 
+    # Load previous alert state for event recording
+    from .alerts import _load_alert_state
+    prev_state = _load_alert_state()
+
     results = []
     for source in sources:
-        results.append(check_source(source, readers))
+        result = check_source(source, readers)
+        results.append(result)
+
+        # Record events for status changes
+        if result.source_id and result.source_id in prev_state:
+            old_status = prev_state[result.source_id].get("status", "ok")
+            new_status = result.status
+            if old_status != new_status and new_status not in ("not_installed",):
+                from .events import record_event
+                if new_status in ("stale", "error", "blocked", "no_key"):
+                    record_event(
+                        event_type=f"source_{new_status}",
+                        garden=result.garden,
+                        source_id=result.source_id,
+                        severity="critical" if new_status == "error" else "warning",
+                    )
+                elif old_status in ("stale", "error", "blocked", "no_key", "unknown") and new_status == "ok":
+                    record_event(
+                        event_type="source_recovered",
+                        garden=result.garden,
+                        source_id=result.source_id,
+                        severity="info",
+                    )
+
     return results
 
 
