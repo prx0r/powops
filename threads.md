@@ -42,6 +42,12 @@ Everything that's unfinished, broken, blocked or waiting on something.
 **Fix:** run `gh auth login` on the VPS as the dashboard user (needs a token with public-repo read). Do NOT commit tokens. Verified 2026-09-23 that the module works when GH_TOKEN is present.
 **Priority:** medium — dashboard completeness, not data collection.
 
+## Thread 26: same-day incident IDs collide
+**Status:** verified 2026-09-23 (ADV-3d). Incident IDs are `inc-YYYYMMDD-garden-source` — a second same-day outage for the same source overwrites the first file. Roadmap §11 requires independent lifecycles per outage.
+**Impact:** repeat intraday outages lose the first incident's history.
+**Fix:** append a sequence or time component to incident IDs + migrate existing files. Needs the P4 incident work.
+**Priority:** medium — single-outage tracking works correctly today.
+
 ## Thread 1: powuk broken collectors
 
 **Status:** 4 collectors failing
