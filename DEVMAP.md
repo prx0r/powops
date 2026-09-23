@@ -11,10 +11,10 @@ Each garden is growing its own interface. powops is the integrated monitoring la
 
 | Garden | Own MCP? | Own API? | Tools | Pi agent access |
 |--------|----------|----------|-------|-----------------|
-| powops | yes (16 tools) | yes (dashboard) | status, history, uptime, incidents, events, coverage, schemas, verify, sources, alerts, volume, timeline, repos | enabled in opencode.jsonc |
-| powstock | yes (10 tools) | yes (FastAPI) | health, universe, prices, insiders, short_interest, rns, companies, signals, runs, collectors, summary | exists, not yet enabled |
-| powpowpow | yes (10 tools upstream, 6 local) | yes (site/server.py) | asset_state, signals, factors, compute_routes, miner_pressure, brief, +get_live, +get_xmr_full upstream | exists, not yet enabled |
-| powphysical | yes (6 tools) | no | search, resolve, compare, save_build, get_build, reprice | fixture data only — do not enable yet |
+| powops | yes (17 tools) | yes (dashboard) | status, history, uptime, incidents, events, coverage, schemas, verify, sources, alerts, volume, timeline, repos | enabled in opencode.jsonc |
+| powstock | yes (11 tools) | yes (FastAPI) | health, universe, prices, insiders, short_interest, rns, companies, signals, runs, collectors, summary | enabled 2026-09-23 (`-m powstock.mcp --stdio`) |
+| powpowpow | yes (8 local, 11 upstream) | yes (site/server.py) | asset_state, signals, factors, compute_routes, miner_pressure, brief, price_history, health (+get_live, +get_xmr_full, +get_opportunity upstream) | enabled 2026-09-23 (venv python, FastMCP stdio) |
+| powphysical | yes (6 tools) | no | search, resolve, compare, save_build, get_build, reprice | DISABLED — fixture data only |
 | powuk | no (spec only) | no (collector runner) | — | via powops only |
 | repair | no | no | — | via powops only |
 | powproducts | no | no | — | via powops only |
@@ -32,7 +32,7 @@ Each garden is growing its own interface. powops is the integrated monitoring la
 │                        POWOPS                                    │
 │                                                                  │
 │  CLI: 15 commands                                                 │
-│  MCP: 16 tools (live for pi agent)                               │
+│  MCP: 17 tools (live for pi agent)                               │
 │  Dashboard: 9 tabs (status, history, uptime, volume, schemas,   │
 │             alerts, incidents, events, repos)                    │
 │  Tests: 69 passing                                               │
