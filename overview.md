@@ -1,5 +1,11 @@
 # POW System Architecture Overview
 
+> NOTE (2026-09-23): historical design document. Predates the 7-garden
+> registry (powproducts, powrobots, powphysical added later), the incident/
+> event subsystems, and the MCP server. Architecture direction still valid;
+> specifics (e.g. "29 sources", "four gardens", file layouts) are stale.
+> See README.md, AUDIT.md and vision/devplan.md for current state.
+
 Yes. After reviewing the actual four repos, I think your revised three-layer picture is **cleaner than the architecture I was pushing earlier**, and I would keep the Layer-1 gardens as separate repositories.
 
 One correction: the stock repo is currently `prx0r/powstock`, singular, not `powstocks`.

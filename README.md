@@ -18,22 +18,28 @@ powops monitors every data source across every POW garden and answers one questi
 It reads health artifacts from each garden (heartbeat files, SQLite tables, file timestamps, process IDs), aggregates them into a unified status view, and tracks history, volume, schema drift, and alerts over time.
 
 ```
-powpowpow  ─┐
-repair     ─┤
-powuk      ─┼── powops ── Dashboard (port 8796)
-powstock   ─┘              CLI
-                           systemd (health timer every 15min)
-                           Cloudflare tunnel → admin.pow.systems
+powpowpow    ─┐
+repair       ─┤
+powuk        ─┼── powops ── Dashboard (port 8796)
+powstock     ─┤              CLI (15 commands)
+powproducts  ─┤              MCP (17 tools)
+powrobots    ─┤              systemd (health timer every 15min)
+powphysical  ─┘              Cloudflare tunnel → admin.pow.systems
 ```
 
-## Gardens
+## Gardens (7 monitored, 88 configured sources)
 
-| Garden | Sources | What it collects |
-|--------|---------|-----------------|
-| **powpowpow** | 7 | PoW chain compute, venue L2, WebSocket ticks |
-| **repair** | 7 | Open Repair, eBay UK, DVLA, land registry, planning, EPREL, France repairability |
-| **powuk** | 8 | NESO demand/generation, PV Live, planning apps, ONS labour, APAR, Ofqual, contracts |
-| **powstock** | 7 | Stooq/Yahoo prices, RNS, Companies House, FCA PDMR/short interest, PSC |
+| Garden | What it collects | Check types used |
+|--------|-----------------|-----------------|
+| **powpowpow** | PoW chain compute, venue L2, WebSocket ticks | heartbeat |
+| **repair** | Open Repair, eBay/CeX, DVLA, land registry, planning, EPREL, France repairability + daemon collectors (cex, trade pricing, partsdb) | collector_db |
+| **powuk** | NESO demand/generation, PV Live, planning apps, ONS labour, APAR, Ofqual, contracts | pow_health artifacts |
+| **powstock** | Yahoo prices, RNS, Companies House, FCA PDMR/short interest, commodities | pow_health artifacts |
+| **powproducts** | RobotShop catalogue, component identity (7 more planned) | collector_db |
+| **powrobots** | HMRC trade, UKRI grants, RBTX, safety recalls, BARA, apprenticeships (+5 need API keys) | collector_db |
+| **powphysical** | LCSC/M5Stack/Waveshare adapters (fixture-only, no live data yet) | raw_mtime |
+
+Counts change as collectors are added; run `python3 -m powops sources` for the live list.
 
 ## Quick Start
 
@@ -44,7 +50,7 @@ python3 -m powops status
 # Full check with history + alerts
 python3 -m powops full
 
-# List all 29 sources
+# List all configured sources
 python3 -m powops sources
 ```
 
@@ -54,35 +60,46 @@ python3 -m powops sources
 python3 -m powops status              # Table view of all sources
 python3 -m powops status --json       # JSON output
 python3 -m powops full                # Check + record history + fire alerts
-python3 -m powops full --dry-run      # Check without firing alerts
+python3 -m powops full --dry-run      # Check without firing alerts (still records history)
 python3 -m powops history             # Recent check history
 python3 -m powops history --source X  # History for one source
 python3 -m powops history --garden Y  # History for one garden
 python3 -m powops uptime              # Uptime stats per source
+python3 -m powops timeline <source>   # Status transitions for one source
 python3 -m powops volume              # Row count summary
+python3 -m powops volume --source X   # Volume history for one source
 python3 -m powops schemas             # Known schema snapshots
 python3 -m powops alerts              # Current alert state
-python3 -m powops check <source>      # Check one source
+python3 -m powops incidents           # Show incidents (--status, --garden, --source)
+python3 -m powops events              # Recent events (--days, --garden, --type)
+python3 -m powops repos               # GitHub commit/CI status for all repos
+python3 -m powops check <source>      # Check a specific source
 python3 -m powops sources             # List all configured sources
 python3 -m powops backup              # Sync raw data to R2
 ```
 
 ## Dashboard
 
-A single-file terminal-aesthetic SPA served by a stdlib HTTP server on port 8796.
+Terminal-aesthetic SPA served by a stdlib HTTP server on port 8796.
+Static assets (`style.css`, `app.js`) are separate files; CSP is strict
+(no inline scripts/styles).
 
 ```bash
 python3 web/server.py
 # Prints: http://localhost:8796/?token=<TOKEN>
 ```
 
-### Views
+### Views (9 tabs)
 
 - **STATUS** — Live health table grouped by garden
 - **HISTORY** — Recent check entries, filterable by garden
 - **UPTIME** — 7-day uptime percentage per source
 - **VOLUME** — Row count statistics per source
 - **SCHEMAS** — Known schema snapshots and drift
+- **ALERTS** — Current alert state per source
+- **INCIDENTS** — Open/resolved incidents
+- **EVENTS** — Append-only operational event stream
+- **REPOS** — GitHub commit/CI status (needs `gh auth login` on server)
 
 ### API Endpoints
 
@@ -96,35 +113,54 @@ python3 web/server.py
 | `GET /api/volume` | Volume summary |
 | `GET /api/volume/<src>` | Volume history for one source |
 | `GET /api/schemas` | Known schemas |
+| `GET /api/schema/<src>` | Schema snapshot for one source |
 | `GET /api/alerts` | Current alert state |
+| `GET /api/incidents` | Incidents (`?status=&garden=&source=`) |
+| `GET /api/events` | Events (`?days=&garden=&source=&type=`) |
+| `GET /api/repos` | GitHub repo status |
 
-All endpoints require `?token=<TOKEN>`. Token is auto-generated on first run and stored in `~/.powops/dashboard_token`.
+Auth: `?token=<TOKEN>` query param (dashboard links) or
+`Authorization: Bearer <TOKEN>` header (API clients, preferred —
+doesn't leak into logs). Token is auto-generated on first run and
+stored in `~/.powops/dashboard_token`.
 
 ## Health Check Types
 
 Each source in `sources.yaml` has a `health.check` type:
 
-| Type | How it works | Used by |
-|------|-------------|---------|
-| `heartbeat` | Reads a JSON file, checks `heartbeat_at` timestamp | powpowpow |
-| `collector_db` | Queries SQLite `collector_run` or `collection_runs` table | repair |
-| `raw_mtime` | Checks file modification times in a directory | powuk, powstock |
-| `pid_file` | Checks if a PID file points to a live process | (available) |
+| Type | How it works | Evidence | Used by |
+|------|-------------|----------|---------|
+| `heartbeat` | Reads a JSON file, checks `heartbeat_at` timestamp (rejects missing/future) | strong | powpowpow |
+| `collector_db` | Queries SQLite `collector_run` table (failed runs don't count as success) | strong | repair, powproducts, powrobots |
+| `pow_health` | Reads `data/health/<source>.json` (`pow-health/1` protocol) | strong | powuk, powstock |
+| `raw_mtime` | Checks file modification times in a directory | weak | powphysical |
+| `pid_file` | Checks if a PID file points to a live process (live PID without data = `unknown`) | weak | (available) |
 
 ## MCP Server
 
 powops exposes an MCP server so the pi agent can autonomously monitor and troubleshoot garden health.
 
-### Tools
+### Tools (17)
 
 | Tool | Description |
 |------|-------------|
-| `powops_status` | Check health of all sources (optional `garden` filter) |
-| `powops_check` | Check a specific source by ID |
-| `powops_history` | Query check history (optional `source`, `garden`, `days` filters) |
-| `powops_uptime` | Get uptime statistics per source |
-| `powops_diagnose` | Run diagnostics — identifies stale/errored sources and suggests fixes |
+| `powops_status` | Health of all sources (optional `garden` filter) |
+| `powops_source` | Health of one source by ID |
+| `powops_history` | Check history (`source`, `garden`, `days`) |
+| `powops_uptime` | Uptime stats per source |
+| `powops_timeline` | Status transitions for one source |
+| `powops_volume` | Volume summary |
+| `powops_volume_source` | Volume history for one source |
+| `powops_incidents` | Query incidents (`status`, `garden`) |
+| `powops_coverage` | Coverage across gardens |
+| `powops_schemas` | Known schemas |
+| `powops_schema` | Schema snapshot for one source |
+| `powops_schema_history` | Schema change history |
+| `powops_verify` | Verify chain-hash integrity |
 | `powops_sources` | List all configured sources |
+| `powops_events` | Query event stream |
+| `powops_alerts` | Current alert state |
+| `powops_repos` | GitHub commit/CI status |
 
 ### Running
 
@@ -149,41 +185,55 @@ python3 -m powops.mcp
 
 ### Agent workflow
 
-The pi agent can use `powops_diagnose` to autonomously:
-1. Detect stale or errored sources
-2. Identify missing API keys
-3. Suggest corrective actions
-4. Check if collectors are running
-5. Monitor uptime trends
+The pi agent uses the read-only tools to monitor without touching data.
+A typical run: `powops_status` → `powops_incidents` → `powops_events` →
+`powops_source` for anything failing → `powops_history` for context.
+`powops_verify` proves history hasn't been tampered with.
+The agent never writes: no shell, no deploys, no secret access through MCP.
 
 ## Architecture
 
 ```
 powops/
 ├── powops/                  # Python package
-│   ├── __main__.py          # CLI entry point
+│   ├── __main__.py          # CLI entry point (15 commands)
 │   ├── config.py            # Path configuration (STATE_DIR, etc.)
-│   ├── garden.py            # SourceStatus + GardenReader (4 check types)
+│   ├── garden.py            # SourceStatus + GardenReader (5 check types)
 │   ├── health.py            # Cross-garden aggregation + check_all_full()
 │   ├── status.py            # CLI table rendering
 │   ├── history.py           # Append-only JSONL history + uptime stats
 │   ├── volume.py            # Row count tracking + anomaly detection
 │   ├── schema.py            # Schema drift detection
 │   ├── alerts.py            # State-machine webhook alerting
-│   ├── mcp.py               # MCP server for pi agent
+│   ├── incidents.py         # Durable incident tracking (unique IDs)
+│   ├── events.py            # Append-only event stream
+│   ├── repos.py             # GitHub commit/CI status
+│   ├── backup.py            # R2 sync coordination
+│   ├── mcp.py               # MCP server (17 tools)
 │   └── sources.yaml         # Universal source manifest
 ├── web/
-│   ├── server.py            # Stdlib HTTP server (port 8796, token-gated)
+│   ├── server.py            # Stdlib HTTP server (port 8796, token/header auth)
 │   └── static/
-│       └── index.html       # Single-file SPA dashboard
+│       ├── index.html       # Dashboard shell
+│       ├── app.js           # Dashboard logic
+│       └── style.css        # Dashboard styles
 ├── deploy/
 │   └── systemd/
 │       ├── powops-dashboard.service   # Dashboard server
 │       ├── powops-health.service      # Health snapshot (oneshot)
 │       └── powops-health.timer        # Triggers health every 15min
 ├── tests/
-│   ├── test_powops.py       # Core module tests (68 tests)
-│   └── test_new_features.py # History/alerts/volume/schema tests
+│   ├── test_powops.py       # Core module tests
+│   ├── test_new_features.py # History/alerts/volume/schema tests
+│   ├── test_mcp.py          # MCP handshake + tool list
+│   └── test_mcp_full.py     # All 17 tools over stdio
+├── runs/                    # Tested logs (proof of actual runs)
+├── reports/
+│   ├── AUDIT.md             # (see root AUDIT.md)
+│   └── baseline/            # VPS audit, garden status, blockers, peer review
+├── vision/                  # Strategy docs (devplan.md is the entry point)
+├── threads.md               # Open work items
+├── DEVMAP.md                # Development map + priorities
 ├── pyproject.toml
 └── README.md
 ```
@@ -207,7 +257,8 @@ powops/
 ├── volume/                  # Volume tracking (YYYY-MM-DD.jsonl)
 ├── schemas/                 # Schema snapshots (per-source JSON)
 ├── alerts.json              # Alert state machine
-└── health/                  # Health artifacts
+├── incidents/               # Incident files (inc-<timestamp>-<garden>-<source>.json)
+└── events/                  # Event stream (YYYY-MM-DD.jsonl)
 ```
 
 ### Source Manifest (sources.yaml)
@@ -217,7 +268,7 @@ gardens:
   my_garden:
     path: /path/to/garden
     description: What this garden collects
-    health_check: heartbeat  # or collector_db, raw_mtime, pid_file
+    health_check: heartbeat  # or collector_db, raw_mtime, pid_file, pow_health
     storage: warehouse/raw/
 
 sources:
@@ -228,10 +279,16 @@ sources:
     description: What this source provides
     cadence: daily
     health:
-      check: heartbeat
+      check: heartbeat        # or collector_db (needs source_id), raw_mtime
       file: warehouse/heartbeat.json
       max_staleness: 48h
 ```
+
+For `pow_health` checks, the garden writes `data/health/<source_id>.json`
+using the `pow-health/1` protocol (see powuk/server.py). For
+`collector_db`, the `health.source_id` may differ from the powops source
+`id` (e.g. powstock `yahoo_finance` reads `yahoo_prices`) — this decoupling
+is intentional.
 
 ## Adding a New Garden
 
@@ -271,15 +328,17 @@ journalctl --user -u powops-dashboard.service -f
 python3 -m pytest tests/ -v
 ```
 
-68 tests covering:
+70 tests covering:
 - Duration and timestamp parsing
-- All 4 health check types (heartbeat, collector_db, raw_mtime, pid_file)
+- All 5 health check types (heartbeat, collector_db, raw_mtime, pid_file, pow_health)
+- False-green rejection (missing/future heartbeats, failed DB runs, live PIDs)
 - Health aggregation and overall status
 - Status table and JSON rendering
-- History recording, querying, and timeline dedup
+- History recording, querying, timeline dedup, chain verification
 - Volume tracking and anomaly detection
 - Schema snapshot and drift detection
-- Alert state machine and webhook payloads
+- Alert state machine (fire-once, suppression, recovery) and webhook payloads
+- MCP handshake + all 17 tools over stdio
 
 ## Design Principles
 
