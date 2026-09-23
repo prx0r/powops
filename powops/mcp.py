@@ -29,6 +29,7 @@ from powops.schema import list_schemas, get_schema_snapshot, get_schema_history
 from powops.alerts import get_alert_state
 from powops.incidents import get_incidents, get_open_incidents
 from powops.events import get_events
+from powops.repos import get_all_repos
 from powops.config import STATE_DIR, HISTORY_DIR
 
 MANIFEST = os.path.join(ROOT, "powops", "sources.yaml")
@@ -289,6 +290,13 @@ async def powops_schema_history(source_id: str) -> str:
     """
     history = await _run_sync(get_schema_history, source_id)
     return json.dumps({"source": source_id, "history": history}, indent=2)
+
+
+@mcp.tool()
+async def powops_repos() -> str:
+    """Get GitHub commit and CI status for all POW repositories."""
+    repos = await _run_sync(get_all_repos)
+    return json.dumps({"repos": repos}, indent=2, default=str)
 
 
 async def main():

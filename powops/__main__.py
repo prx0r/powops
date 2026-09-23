@@ -59,7 +59,14 @@ def main():
     # volume
     vol_p = sub.add_parser("volume", help="Volume summary")
     vol_p.add_argument("--days", type=int, default=7, help="Days back (default 7)")
+    vol_p.add_argument("--source", help="Volume history for one source")
     vol_p.add_argument("--json", action="store_true", help="Output as JSON")
+
+    # timeline
+    tl_p = sub.add_parser("timeline", help="Status transitions for one source")
+    tl_p.add_argument("source_id", help="Source ID to show timeline for")
+    tl_p.add_argument("--days", type=int, default=7, help="Days back (default 7)")
+    tl_p.add_argument("--json", action="store_true", help="Output as JSON")
 
     # schemas
     sub.add_parser("schemas", help="Show known schemas")
@@ -173,6 +180,8 @@ def main():
         from .health import load_manifest
         manifest = load_manifest()
         sources = manifest.get("sources", [])
+        # Exclude not_installed to match dashboard /api/uptime and MCP powops_uptime
+        sources = [s for s in sources if s.get("status") != "not_installed"]
 
         if args.source:
             sources = [s for s in sources if s["id"] == args.source]
@@ -194,6 +203,22 @@ def main():
             print()
 
     elif args.command == "volume":
+        if args.source:
+            from .volume import get_volume_history
+            history = get_volume_history(args.source, days=args.days)
+            if args.json:
+                print(json.dumps({"source": args.source, "history": history}, indent=2))
+            else:
+                if not history:
+                    print("  No volume data found.")
+                else:
+                    print(f"\n  {'TIME':<22} {'RECORDS'}")
+                    print(f"  {'─'*22} {'─'*12}")
+                    for e in history:
+                        print(f"  {e.get('ts','')[:19]:<22} {e.get('records','')}")
+                    print(f"\n  {len(history)} entries")
+                    print()
+            return
         from .volume import get_volume_summary
         summary = get_volume_summary(days=args.days)
         if args.json:
@@ -328,6 +353,22 @@ def main():
         else:
             print(format_repo_table(repos))
             print()
+
+    elif args.command == "timeline":
+        from .history import get_source_timeline
+        timeline = get_source_timeline(args.source_id, days=args.days)
+        if args.json:
+            print(json.dumps({"source": args.source_id, "timeline": timeline}, indent=2))
+        else:
+            if not timeline:
+                print("  No status transitions found.")
+            else:
+                print(f"\n  {'TIME':<22} {'STATUS':<12} {'AGE'}")
+                print(f"  {'─'*22} {'─'*12} {'─'*12}")
+                for e in timeline:
+                    print(f"  {e.get('ts','')[:19]:<22} {e.get('status',''):<12} {e.get('age_seconds','')}")
+                print(f"\n  {len(timeline)} transitions")
+                print()
 
     else:
         parser.print_help()

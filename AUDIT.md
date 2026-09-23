@@ -282,6 +282,32 @@ systemctl --user start powops-health.timer
 
 ---
 
+## Consistency matrix (verified 2026-09-23)
+
+All three surfaces (dashboard API, MCP, CLI) share the same backend functions. Verified live.
+
+| Data | Dashboard | MCP | CLI | Status |
+|------|-----------|-----|-----|--------|
+| status | /api/status (30s cache) | powops_status (live) | `status` | match (82 sources) |
+| history | /api/history | powops_history | `history` | match (411 entries) |
+| uptime | /api/uptime | powops_uptime | `uptime` | match (61, excl. not_installed — CLI fixed 2026-09-23) |
+| volume | /api/volume | powops_volume | `volume` | match (35 sources) |
+| volume 1-src | /api/volume/\<src> | powops_volume_source | `volume --source` | match (added 2026-09-23) |
+| alerts | /api/alerts | powops_alerts | `alerts` | match (57 sources in state) |
+| incidents | /api/incidents | powops_incidents | `incidents` | match (1 open) |
+| events | /api/events | powops_events | `events` | match (15 events) |
+| schemas | /api/schemas | powops_schemas | `schemas` | match (1: open_repair) |
+| schema 1-src | /api/schema/\<src> | powops_schema | — | dashboard+MCP only, no CLI equivalent (minor) |
+| timeline | /api/timeline | powops_timeline | `timeline` | match (added CLI 2026-09-23) |
+| repos | /api/repos | powops_repos | `repos` | match (9 repos, added MCP 2026-09-23) |
+| verify | — | powops_verify | — | MCP only, no dashboard/CLI equivalent (minor) |
+| coverage | — | powops_coverage | — | MCP only, gallery view in dashboard status tab |
+
+**Known acceptable differences:**
+- /api/status caches 30s; MCP/CLI are live. Documented in server.py.
+- CLI status table counts installed sources (42); JSON/MCP include not_installed (82).
+- Missing powops_diagnose (roadmap P6) — documented, not yet built.
+
 ## Key design decisions
 
 1. **Health artifacts** — Each garden writes `data/health/{source}.json` with `pow-health/1` protocol. powops reads these.
