@@ -40,7 +40,7 @@ gardens:
     storage: data/raw/
 
   powstock:
-    path: /home/ubuntu/powstock
+    path: /root/powstock
     description: UK public-market / corporate / ownership / microstructure
     health_check: collector_db
     db_path: data/powstock.db
