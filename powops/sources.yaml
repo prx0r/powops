@@ -34,13 +34,13 @@ gardens:
     storage: warehouse/
 
   powuk:
-    path: /root/powuk
+    path: /home/ubuntu/powuk
     description: UK physical capacity / labour / infrastructure / policy
     health_check: pow_health
     storage: data/raw/
 
   powstock:
-    path: /root/powstock
+    path: /home/ubuntu/powstock
     description: UK public-market / corporate / ownership / microstructure
     health_check: collector_db
     db_path: data/powstock.db
