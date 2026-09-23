@@ -40,9 +40,10 @@ gardens:
     storage: data/raw/
 
   powstock:
-    path: /home/ubuntu/powstock
+    path: /root/powstock
     description: UK public-market / corporate / ownership / microstructure
-    health_check: raw_mtime
+    health_check: collector_db
+    db_path: data/powstock.db
     storage: data/raw/
 
   powproducts:
@@ -341,83 +342,227 @@ sources:
 
   # ═══════════════════════════════════════════════════════════
   # POWSTOCK — UK capital markets / corporate / ownership
+  #
+  # source_id MUST match ingest_run.source in powstock DB.
+  # Run `python3 -c "from powstock.collectors.runner import init_db; ..."` to check.
+  #
+  # Active sources: have ingest_run entries (data flowing)
+  # Inactive sources: wired into run_all() but no runs yet (need API keys or time)
   # ═══════════════════════════════════════════════════════════
 
-  - id: stooq_prices
-    garden: powstock
-    authority: Stooq
-    type: csv
-    description: UK equity daily OHLCV prices
-    cadence: daily
-    health:
-      check: raw_mtime
-      directory: data/raw/stooq_prices
-      max_staleness: 48h
+  # --- ACTIVE (have ingest_run entries, data confirmed) ---
 
-  - id: yahoo_prices
+  - id: yahoo_finance
     garden: powstock
     authority: Yahoo Finance
     type: api
-    description: UK equity prices (backup source)
+    description: UK equity prices (25 tickers, daily OHLCV)
     cadence: daily
     health:
-      check: raw_mtime
-      directory: data/raw/yahoo_prices
+      check: collector_db
+      source_id: yahoo_finance
       max_staleness: 48h
 
-  - id: rns_announcements
+  - id: investegate_rns
     garden: powstock
     authority: Investegate / LSE
     type: scrape
     description: UK listed company RNS announcements
     cadence: 6h
     health:
-      check: raw_mtime
-      directory: data/raw/rns_announcements
+      check: collector_db
+      source_id: investegate_rns
       max_staleness: 12h
 
   - id: companies_house
     garden: powstock
     authority: Companies House
     type: api
-    description: UK company filings and director changes
+    description: UK company profiles (25 universe companies)
     cadence: daily
+    api_key_env: POWSTOCK_COMPANIES_HOUSE_API_KEY
     health:
-      check: raw_mtime
-      directory: data/raw/companies_house
+      check: collector_db
+      source_id: companies_house
       max_staleness: 168h
 
-  - id: fca_pdmr
+  - id: investegate_pdmr
     garden: powstock
     authority: Investegate / FCA
     type: scrape
     description: FCA PDMR director transactions
     cadence: daily
     health:
-      check: raw_mtime
-      directory: data/raw/fca_pdmr
+      check: collector_db
+      source_id: investegate_pdmr
       max_staleness: 48h
 
-  - id: fca_short_interest
+  - id: fca_ansp
     garden: powstock
     authority: FCA
     type: api
-    description: FCA short interest positions
+    description: FCA short interest positions (ANSP)
     cadence: daily
     health:
-      check: raw_mtime
-      directory: data/raw/fca_short_interest
+      check: collector_db
+      source_id: fca_ansp
       max_staleness: 48h
 
-  - id: psc_snapshot
+  - id: takeover_panel
+    garden: powstock
+    authority: Takeover Panel
+    type: api
+    description: Takeover Panel disclosure notices
+    cadence: daily
+    health:
+      check: collector_db
+      source_id: takeover_panel
+      max_staleness: 168h
+
+  - id: fca_tr1
+    garden: powstock
+    authority: FCA
+    type: api
+    description: FCA TR-1 major shareholder notifications
+    cadence: daily
+    health:
+      check: collector_db
+      source_id: fca_tr1
+      max_staleness: 168h
+
+  - id: commodity_prices
+    garden: powstock
+    authority: Yahoo Finance
+    type: api
+    description: Commodity spot prices (oil, gas, metals)
+    cadence: daily
+    health:
+      check: collector_db
+      source_id: commodity_prices
+      max_staleness: 168h
+
+  # --- INACTIVE (wired into run_all but no ingest_run entries yet) ---
+
+  - id: companies_house_psc
     garden: powstock
     authority: Companies House
     type: api
-    description: Persons of Significant Control snapshot
+    description: Persons of Significant Control daily snapshot
     cadence: daily
+    status: not_installed
     health:
-      check: raw_mtime
-      directory: data/raw/psc_snapshot
+      check: collector_db
+      source_id: companies_house_psc
+      max_staleness: 168h
+
+  - id: ch_company_snapshot
+    garden: powstock
+    authority: Companies House
+    type: api
+    description: CH company snapshot (monthly bulk)
+    cadence: daily
+    status: not_installed
+    health:
+      check: collector_db
+      source_id: ch_company_snapshot
+      max_staleness: 168h
+
+  - id: ch_accounts_bulk
+    garden: powstock
+    authority: Companies House
+    type: api
+    description: CH XBRL accounts bulk download
+    cadence: daily
+    status: not_installed
+    health:
+      check: collector_db
+      source_id: ch_accounts_bulk
+      max_staleness: 168h
+
+  - id: companies_house_filings
+    garden: powstock
+    authority: Companies House
+    type: api
+    description: Company filing events (SH01, AP01, TM01, etc)
+    cadence: daily
+    api_key_env: POWSTOCK_COMPANIES_HOUSE_API_KEY
+    status: not_installed
+    health:
+      check: collector_db
+      source_id: companies_house_filings
+      max_staleness: 168h
+
+  - id: finnhub
+    garden: powstock
+    authority: Finnhub
+    type: api
+    description: Finnhub UK insider transactions
+    cadence: daily
+    api_key_env: FINNHUB_API_KEY
+    status: not_installed
+    health:
+      check: collector_db
+      source_id: finnhub
+      max_staleness: 168h
+
+  - id: uk_parliament
+    garden: powstock
+    authority: UK Parliament
+    type: api
+    description: UK MP shareholdings register
+    cadence: daily
+    status: not_installed
+    health:
+      check: collector_db
+      source_id: uk_parliament
+      max_staleness: 168h
+
+  - id: congress_trades
+    garden: powstock
+    authority: US Congress
+    type: api
+    description: US Congress trading disclosures
+    cadence: daily
+    status: not_installed
+    health:
+      check: collector_db
+      source_id: congress_trades
+      max_staleness: 168h
+
+  - id: european_insiders
+    garden: powstock
+    authority: BaFin / AMF / AFM
+    type: api
+    description: European insider trading notifications
+    cadence: daily
+    status: not_installed
+    health:
+      check: collector_db
+      source_id: european_insiders
+      max_staleness: 168h
+
+  - id: dmo_gilts
+    garden: powstock
+    authority: DMO / Bank of England
+    type: api
+    description: UK gilt yields and BoE rates
+    cadence: daily
+    status: not_installed
+    health:
+      check: collector_db
+      source_id: dmo_gilts
+      max_staleness: 168h
+
+  - id: fca_nsm
+    garden: powstock
+    authority: FCA
+    type: api
+    description: FCA National Storage Mechanism filings
+    cadence: daily
+    status: not_installed
+    health:
+      check: collector_db
+      source_id: fca_nsm
       max_staleness: 168h
 
   # ═══════════════════════════════════════════════════════════
