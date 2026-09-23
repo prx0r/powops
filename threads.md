@@ -11,12 +11,16 @@ Everything that's unfinished, broken, blocked or waiting on something.
 
 ---
 
-## Thread 21: powpowpow pull blocked by local changes
-**Status:** upstream has 5+ new commits (peer-review hardening, hot trim, MCP 10 tools, site systemd, opportunity snapshots). Local has uncommitted backtest.py rewrite (emission-valuation approach vs upstream fundamentals scaffold) + network_state.json runtime updates.
-**Impact:** local agent work would conflict on pull.
-**Fix:** commit or stash local backtest.py/network_state.json changes first, then pull origin/master. Do not force-pull blindly while collectors run.
-**Update 2026-09-23:** upstream MCP now 10 tools (+get_live, +get_xmr_full). BLOCKERS.md rewritten with 10 current blockers. Still not pulling — local backtest.py divergence is real work, needs owner merge.
-**Priority:** medium — collectors running fine (7/7 OK), merge when local work is saved.
+## Thread 21: powpowpow pull blocked — histories diverged
+**Status:** local master (f707e9c) has 33 unpushed agent commits; origin/master
+has 10 different commits (BTC dashboard tab, homelab adapter, opportunity
+snapshots, wire-up audit). Shared hashes on both sides = one side was
+rewritten. Local backtest.py rewrite preserved on branch
+`local-backtest-rewrite` (commit 087ea9f); master tree clean.
+**Impact:** none on monitoring (powops reads artifacts, not code). Collectors 7/7 OK.
+**Fix:** owner must reconcile (merge or rebase) — do NOT auto-merge on the
+live collector host. Upstream MCP now 10 tools; note in DEVMAP when merged.
+**Priority:** medium.
 
 ## Thread 22: powstock ingest_run empty
 **Status:** collectors write to data tables (24 prices, 891 RNS, 422 short) but ingest_run has 0 rows, so collector_run view is empty.
