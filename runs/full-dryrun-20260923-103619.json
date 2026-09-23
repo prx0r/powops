@@ -1,0 +1,822 @@
+{
+  "overall": "degraded",
+  "gardens": {
+    "powpowpow": {
+      "total": 7,
+      "ok": 7,
+      "stale": 0,
+      "error": 0,
+      "blocked": 0,
+      "no_key": 0,
+      "not_installed": 0,
+      "unknown": 0
+    },
+    "repair": {
+      "total": 7,
+      "ok": 1,
+      "stale": 0,
+      "error": 0,
+      "blocked": 0,
+      "no_key": 0,
+      "not_installed": 0,
+      "unknown": 6
+    },
+    "powuk": {
+      "total": 24,
+      "ok": 9,
+      "stale": 0,
+      "error": 4,
+      "blocked": 0,
+      "no_key": 0,
+      "not_installed": 0,
+      "unknown": 11
+    },
+    "powstock": {
+      "total": 18,
+      "ok": 4,
+      "stale": 0,
+      "error": 0,
+      "blocked": 0,
+      "no_key": 1,
+      "not_installed": 10,
+      "unknown": 3
+    },
+    "powproducts": {
+      "total": 8,
+      "ok": 1,
+      "stale": 0,
+      "error": 0,
+      "blocked": 0,
+      "no_key": 0,
+      "not_installed": 7,
+      "unknown": 0
+    },
+    "powrobots": {
+      "total": 15,
+      "ok": 9,
+      "stale": 0,
+      "error": 1,
+      "blocked": 0,
+      "no_key": 5,
+      "not_installed": 0,
+      "unknown": 0
+    },
+    "powphysical": {
+      "total": 3,
+      "ok": 0,
+      "stale": 0,
+      "error": 0,
+      "blocked": 0,
+      "no_key": 0,
+      "not_installed": 0,
+      "unknown": 3
+    }
+  },
+  "actions": {
+    "history_recorded": true,
+    "volume_recorded": true,
+    "alerts_fired": [],
+    "schema_drifts": [],
+    "volume_anomalies": []
+  },
+  "sources": [
+    {
+      "source_id": "chain_state",
+      "garden": "powpowpow",
+      "status": "ok",
+      "last_success": "2026-09-23T10:31:50.308938+00:00",
+      "age_seconds": 279,
+      "records": null,
+      "error": null
+    },
+    {
+      "source_id": "venue_l2",
+      "garden": "powpowpow",
+      "status": "ok",
+      "last_success": "2026-09-23T10:34:38.064219+00:00",
+      "age_seconds": 111,
+      "records": null,
+      "error": null
+    },
+    {
+      "source_id": "venue_ws",
+      "garden": "powpowpow",
+      "status": "ok",
+      "last_success": "2026-09-23T10:36:24.910376+00:00",
+      "age_seconds": 4,
+      "records": null,
+      "error": null
+    },
+    {
+      "source_id": "qubic_collector",
+      "garden": "powpowpow",
+      "status": "ok",
+      "last_success": "2026-09-23T10:31:50.308938+00:00",
+      "age_seconds": 279,
+      "records": null,
+      "error": null
+    },
+    {
+      "source_id": "prl_collector",
+      "garden": "powpowpow",
+      "status": "ok",
+      "last_success": "2026-09-23T10:31:50.308938+00:00",
+      "age_seconds": 279,
+      "records": null,
+      "error": null
+    },
+    {
+      "source_id": "xmr_collector",
+      "garden": "powpowpow",
+      "status": "ok",
+      "last_success": "2026-09-23T10:31:50.308938+00:00",
+      "age_seconds": 279,
+      "records": null,
+      "error": null
+    },
+    {
+      "source_id": "clore_collector",
+      "garden": "powpowpow",
+      "status": "ok",
+      "last_success": "2026-09-23T10:31:50.308938+00:00",
+      "age_seconds": 279,
+      "records": null,
+      "error": null
+    },
+    {
+      "source_id": "open_repair",
+      "garden": "repair",
+      "status": "ok",
+      "last_success": "2026-09-23T09:23:22.913338+00:00",
+      "age_seconds": 4386,
+      "records": 0,
+      "error": "unknown error"
+    },
+    {
+      "source_id": "ebay_uk",
+      "garden": "repair",
+      "status": "unknown",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "No runs recorded"
+    },
+    {
+      "source_id": "dvla",
+      "garden": "repair",
+      "status": "unknown",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "No runs recorded"
+    },
+    {
+      "source_id": "land_registry",
+      "garden": "repair",
+      "status": "unknown",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "No runs recorded"
+    },
+    {
+      "source_id": "planning_data",
+      "garden": "repair",
+      "status": "unknown",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "No runs recorded"
+    },
+    {
+      "source_id": "eprel",
+      "garden": "repair",
+      "status": "unknown",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "No runs recorded"
+    },
+    {
+      "source_id": "france_repairability",
+      "garden": "repair",
+      "status": "unknown",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "No runs recorded"
+    },
+    {
+      "source_id": "neso_demand",
+      "garden": "powuk",
+      "status": "ok",
+      "last_success": "2026-09-23T07:49:39.876192+00:00",
+      "age_seconds": 10009,
+      "records": 2880,
+      "error": null
+    },
+    {
+      "source_id": "neso_generation",
+      "garden": "powuk",
+      "status": "ok",
+      "last_success": "2026-09-23T07:49:49.684477+00:00",
+      "age_seconds": 10000,
+      "records": 310765,
+      "error": null
+    },
+    {
+      "source_id": "pvlive",
+      "garden": "powuk",
+      "status": "ok",
+      "last_success": "2026-09-23T07:49:35.037432+00:00",
+      "age_seconds": 10014,
+      "records": 1,
+      "error": null
+    },
+    {
+      "source_id": "neso_tec",
+      "garden": "powuk",
+      "status": "unknown",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "No health artifact: /home/ubuntu/powuk/data/health/neso_tec.json"
+    },
+    {
+      "source_id": "ukpn_flex",
+      "garden": "powuk",
+      "status": "ok",
+      "last_success": "2026-09-23T07:49:36.097241+00:00",
+      "age_seconds": 10013,
+      "records": 1,
+      "error": null
+    },
+    {
+      "source_id": "ons_labour",
+      "garden": "powuk",
+      "status": "ok",
+      "last_success": "2026-09-23T07:50:48.412237+00:00",
+      "age_seconds": 9941,
+      "records": 175181,
+      "error": null
+    },
+    {
+      "source_id": "ons_skills",
+      "garden": "powuk",
+      "status": "error",
+      "last_success": null,
+      "age_seconds": null,
+      "records": 0,
+      "error": "HTTP 404: <!DOCTYPE html>\n<html lang=\"en\">\n    <head>\n        <title>Page not found - Office for National Statistics</title>\n        <meta charset=\"utf-8\" />\n        <meta content=\"width=device-width,initial-sc"
+    },
+    {
+      "source_id": "ons_salaries",
+      "garden": "powuk",
+      "status": "error",
+      "last_success": null,
+      "age_seconds": null,
+      "records": 0,
+      "error": "HTTP 404: <!DOCTYPE html>\n<html lang=\"en\">\n    <head>\n        <title>Page not found - Office for National Statistics</title>\n        <meta charset=\"utf-8\" />\n        <meta content=\"width=device-width,initial-sc"
+    },
+    {
+      "source_id": "ashe_wages",
+      "garden": "powuk",
+      "status": "ok",
+      "last_success": "2026-09-23T07:49:40.014765+00:00",
+      "age_seconds": 10009,
+      "records": 3906,
+      "error": null
+    },
+    {
+      "source_id": "nomis_supply",
+      "garden": "powuk",
+      "status": "unknown",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "No health artifact: /home/ubuntu/powuk/data/health/nomis_supply.json"
+    },
+    {
+      "source_id": "apar",
+      "garden": "powuk",
+      "status": "ok",
+      "last_success": "2026-09-23T07:49:36.299226+00:00",
+      "age_seconds": 10013,
+      "records": 1424,
+      "error": null
+    },
+    {
+      "source_id": "ofqual",
+      "garden": "powuk",
+      "status": "unknown",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "No health artifact: /home/ubuntu/powuk/data/health/ofqual.json"
+    },
+    {
+      "source_id": "dfe_apprenticeships",
+      "garden": "powuk",
+      "status": "unknown",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "No health artifact: /home/ubuntu/powuk/data/health/dfe_apprenticeships.json"
+    },
+    {
+      "source_id": "ch_capacity",
+      "garden": "powuk",
+      "status": "ok",
+      "last_success": "2026-09-23T07:50:02.933327+00:00",
+      "age_seconds": 9986,
+      "records": 6,
+      "error": null
+    },
+    {
+      "source_id": "refcom",
+      "garden": "powuk",
+      "status": "unknown",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "No health artifact: /home/ubuntu/powuk/data/health/refcom.json"
+    },
+    {
+      "source_id": "open_repair",
+      "garden": "powuk",
+      "status": "unknown",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "No health artifact: /home/ubuntu/powuk/data/health/open_repair.json"
+    },
+    {
+      "source_id": "planning_apps",
+      "garden": "powuk",
+      "status": "ok",
+      "last_success": "2026-09-23T07:49:42.230288+00:00",
+      "age_seconds": 10007,
+      "records": 5000,
+      "error": null
+    },
+    {
+      "source_id": "contracts_finder",
+      "garden": "powuk",
+      "status": "unknown",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "No health artifact: /home/ubuntu/powuk/data/health/contracts_finder.json"
+    },
+    {
+      "source_id": "find_tender",
+      "garden": "powuk",
+      "status": "error",
+      "last_success": null,
+      "age_seconds": null,
+      "records": 0,
+      "error": "HTTP 400: {\n    \"timestamp\": \"2026-09-23T07:47:45+01:00\",\n    \"status\": 400,\n    \"error\": \"Bad Request\",\n    \"message\": \"Request parameters unknown\",\n    \"path\": \"/api/1.0/ocdsReleasePackages\",\n    \"exception\":"
+    },
+    {
+      "source_id": "epc_stock",
+      "garden": "powuk",
+      "status": "unknown",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "No health artifact: /home/ubuntu/powuk/data/health/epc_stock.json"
+    },
+    {
+      "source_id": "legislation",
+      "garden": "powuk",
+      "status": "unknown",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "No health artifact: /home/ubuntu/powuk/data/health/legislation.json"
+    },
+    {
+      "source_id": "gov_publications",
+      "garden": "powuk",
+      "status": "unknown",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "No health artifact: /home/ubuntu/powuk/data/health/gov_publications.json"
+    },
+    {
+      "source_id": "gov_grants",
+      "garden": "powuk",
+      "status": "unknown",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "No health artifact: /home/ubuntu/powuk/data/health/gov_grants.json"
+    },
+    {
+      "source_id": "evspark_trades",
+      "garden": "powuk",
+      "status": "error",
+      "last_success": null,
+      "age_seconds": null,
+      "records": 0,
+      "error": "[Errno 13] Permission denied: '/root/ab/businesses/evspark/receipts/ch_sweep_areas.csv'"
+    },
+    {
+      "source_id": "yahoo_finance",
+      "garden": "powstock",
+      "status": "ok",
+      "last_success": "2026-09-23T08:06:16.994339+00:00",
+      "age_seconds": 9012,
+      "records": 24,
+      "error": null
+    },
+    {
+      "source_id": "investegate_rns",
+      "garden": "powstock",
+      "status": "ok",
+      "last_success": "2026-09-23T08:06:16.994339+00:00",
+      "age_seconds": 9012,
+      "records": 891,
+      "error": null
+    },
+    {
+      "source_id": "companies_house",
+      "garden": "powstock",
+      "status": "no_key",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "Missing POWSTOCK_COMPANIES_HOUSE_API_KEY"
+    },
+    {
+      "source_id": "investegate_pdmr",
+      "garden": "powstock",
+      "status": "ok",
+      "last_success": "2026-09-23T08:06:16.994339+00:00",
+      "age_seconds": 9012,
+      "records": 20,
+      "error": null
+    },
+    {
+      "source_id": "fca_ansp",
+      "garden": "powstock",
+      "status": "ok",
+      "last_success": "2026-09-23T08:06:16.994339+00:00",
+      "age_seconds": 9012,
+      "records": 422,
+      "error": null
+    },
+    {
+      "source_id": "takeover_panel",
+      "garden": "powstock",
+      "status": "unknown",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "No health artifact: /home/ubuntu/powstock/data/health/takeover_panel.json"
+    },
+    {
+      "source_id": "fca_tr1",
+      "garden": "powstock",
+      "status": "unknown",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "No health artifact: /home/ubuntu/powstock/data/health/fca_tr1.json"
+    },
+    {
+      "source_id": "commodity_prices",
+      "garden": "powstock",
+      "status": "unknown",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "No health artifact: /home/ubuntu/powstock/data/health/commodity_prices.json"
+    },
+    {
+      "source_id": "companies_house_psc",
+      "garden": "powstock",
+      "status": "not_installed",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": null
+    },
+    {
+      "source_id": "ch_company_snapshot",
+      "garden": "powstock",
+      "status": "not_installed",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": null
+    },
+    {
+      "source_id": "ch_accounts_bulk",
+      "garden": "powstock",
+      "status": "not_installed",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": null
+    },
+    {
+      "source_id": "companies_house_filings",
+      "garden": "powstock",
+      "status": "not_installed",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": null
+    },
+    {
+      "source_id": "finnhub",
+      "garden": "powstock",
+      "status": "not_installed",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": null
+    },
+    {
+      "source_id": "uk_parliament",
+      "garden": "powstock",
+      "status": "not_installed",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": null
+    },
+    {
+      "source_id": "congress_trades",
+      "garden": "powstock",
+      "status": "not_installed",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": null
+    },
+    {
+      "source_id": "european_insiders",
+      "garden": "powstock",
+      "status": "not_installed",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": null
+    },
+    {
+      "source_id": "dmo_gilts",
+      "garden": "powstock",
+      "status": "not_installed",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": null
+    },
+    {
+      "source_id": "fca_nsm",
+      "garden": "powstock",
+      "status": "not_installed",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": null
+    },
+    {
+      "source_id": "robotshop_uk",
+      "garden": "powproducts",
+      "status": "ok",
+      "last_success": "2026-09-23T09:13:34.341227+00:00",
+      "age_seconds": 4975,
+      "records": 0,
+      "error": null
+    },
+    {
+      "source_id": "pci_ids",
+      "garden": "powproducts",
+      "status": "not_installed",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": null
+    },
+    {
+      "source_id": "oshwa",
+      "garden": "powproducts",
+      "status": "not_installed",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": null
+    },
+    {
+      "source_id": "robotis_dynamixel",
+      "garden": "powproducts",
+      "status": "not_installed",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": null
+    },
+    {
+      "source_id": "robot_descriptions",
+      "garden": "powproducts",
+      "status": "not_installed",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": null
+    },
+    {
+      "source_id": "mujoco_menagerie",
+      "garden": "powproducts",
+      "status": "not_installed",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": null
+    },
+    {
+      "source_id": "blender_open_data",
+      "garden": "powproducts",
+      "status": "not_installed",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": null
+    },
+    {
+      "source_id": "microbt_official",
+      "garden": "powproducts",
+      "status": "not_installed",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": null
+    },
+    {
+      "source_id": "hmrc_traders",
+      "garden": "powrobots",
+      "status": "ok",
+      "last_success": "2026-09-23T07:46:02.840020+00:00",
+      "age_seconds": 10226,
+      "records": 561,
+      "error": null
+    },
+    {
+      "source_id": "hmrc_trade",
+      "garden": "powrobots",
+      "status": "ok",
+      "last_success": "2026-09-23T07:01:16.755830+00:00",
+      "age_seconds": 12913,
+      "records": 1,
+      "error": null
+    },
+    {
+      "source_id": "ukri_gtr",
+      "garden": "powrobots",
+      "status": "ok",
+      "last_success": "2026-09-23T08:36:12.936716+00:00",
+      "age_seconds": 7216,
+      "records": 0,
+      "error": null
+    },
+    {
+      "source_id": "rbtx",
+      "garden": "powrobots",
+      "status": "ok",
+      "last_success": "2026-09-23T07:01:54.975113+00:00",
+      "age_seconds": 12874,
+      "records": 2,
+      "error": null
+    },
+    {
+      "source_id": "opss_safety",
+      "garden": "powrobots",
+      "status": "ok",
+      "last_success": "2026-09-23T08:36:11.639480+00:00",
+      "age_seconds": 7218,
+      "records": 0,
+      "error": null
+    },
+    {
+      "source_id": "bara_directory",
+      "garden": "powrobots",
+      "status": "ok",
+      "last_success": "2026-09-23T07:01:20.005522+00:00",
+      "age_seconds": 12909,
+      "records": 1,
+      "error": null
+    },
+    {
+      "source_id": "bgs_minerals",
+      "garden": "powrobots",
+      "status": "ok",
+      "last_success": "2026-09-23T07:01:50.988282+00:00",
+      "age_seconds": 12878,
+      "records": 1,
+      "error": null
+    },
+    {
+      "source_id": "contracts_finder",
+      "garden": "powrobots",
+      "status": "error",
+      "last_success": null,
+      "age_seconds": 10041,
+      "records": 0,
+      "error": "[\"fetch_failed\"]"
+    },
+    {
+      "source_id": "ons_ppi",
+      "garden": "powrobots",
+      "status": "ok",
+      "last_success": "2026-09-23T07:01:52.176478+00:00",
+      "age_seconds": 12877,
+      "records": 1,
+      "error": null
+    },
+    {
+      "source_id": "find_apprenticeship",
+      "garden": "powrobots",
+      "status": "ok",
+      "last_success": "2026-09-23T07:01:53.520483+00:00",
+      "age_seconds": 12876,
+      "records": 1,
+      "error": null
+    },
+    {
+      "source_id": "companies_house",
+      "garden": "powrobots",
+      "status": "no_key",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "Missing COMPANIES_HOUSE_API_KEY"
+    },
+    {
+      "source_id": "mouser",
+      "garden": "powrobots",
+      "status": "no_key",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "Missing MOUSER_API_KEY"
+    },
+    {
+      "source_id": "farnell",
+      "garden": "powrobots",
+      "status": "no_key",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "Missing FARNELL_API_KEY"
+    },
+    {
+      "source_id": "lcsc",
+      "garden": "powrobots",
+      "status": "no_key",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "Missing LCSC_API_KEY"
+    },
+    {
+      "source_id": "ebay_uk",
+      "garden": "powrobots",
+      "status": "no_key",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "Missing EBAY_APP_ID"
+    },
+    {
+      "source_id": "lcsc_physical",
+      "garden": "powphysical",
+      "status": "unknown",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "Raw directory not found: /home/ubuntu/powphysical/data/raw/lcsc"
+    },
+    {
+      "source_id": "m5stack",
+      "garden": "powphysical",
+      "status": "unknown",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "Raw directory not found: /home/ubuntu/powphysical/data/raw/m5stack"
+    },
+    {
+      "source_id": "waveshare",
+      "garden": "powphysical",
+      "status": "unknown",
+      "last_success": null,
+      "age_seconds": null,
+      "records": null,
+      "error": "Raw directory not found: /home/ubuntu/powphysical/data/raw/waveshare"
+    }
+  ]
+}

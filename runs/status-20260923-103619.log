@@ -1,0 +1,99 @@
+
+[1mPOWOPS — Layer 1 Command Centre[0m  [2m2026-09-23 10:36 UTC[0m
+
+  Overall: [31m[1mDEGRADED[0m
+
+[2m  GARDEN      SOURCE                LAST SUCCESSAGE       STATUS      [0m
+  ────────────────────────────────────────────────────────────────────
+  powpowpow   chain_state           10:31       4m        [32m         ok[0m
+              venue_l2              10:34       1m        [32m         ok[0m
+              venue_ws              10:36       4s        [32m         ok[0m
+              qubic_collector       10:31       4m        [32m         ok[0m
+              prl_collector         10:31       4m        [32m         ok[0m
+              xmr_collector         10:31       4m        [32m         ok[0m
+              clore_collector       10:31       4m        [32m         ok[0m
+[2m  ────────────────────────────────────────────────────────────────────[0m
+  repair      open_repair           09:23       1h13m     [32m         ok[0m
+              ebay_uk               —           —         [90m          ?[0m
+              dvla                  —           —         [90m          ?[0m
+              land_registry         —           —         [90m          ?[0m
+              planning_data         —           —         [90m          ?[0m
+              eprel                 —           —         [90m          ?[0m
+              france_repairability  —           —         [90m          ?[0m
+[2m  ────────────────────────────────────────────────────────────────────[0m
+  powuk       neso_demand           07:49       2h46m     [32m         ok[0m
+              neso_generation       07:49       2h46m     [32m         ok[0m
+              pvlive                07:49       2h46m     [32m         ok[0m
+              neso_tec              —           —         [90m          ?[0m
+              ukpn_flex             07:49       2h46m     [32m         ok[0m
+              ons_labour            07:50       2h45m     [32m         ok[0m
+              ons_skills            —           —         [31m        ERR[0m
+              ons_salaries          —           —         [31m        ERR[0m
+              ashe_wages            07:49       2h46m     [32m         ok[0m
+              nomis_supply          —           —         [90m          ?[0m
+              apar                  07:49       2h46m     [32m         ok[0m
+              ofqual                —           —         [90m          ?[0m
+              dfe_apprenticeships   —           —         [90m          ?[0m
+              ch_capacity           07:50       2h46m     [32m         ok[0m
+              refcom                —           —         [90m          ?[0m
+              open_repair           —           —         [90m          ?[0m
+              planning_apps         07:49       2h46m     [32m         ok[0m
+              contracts_finder      —           —         [90m          ?[0m
+              find_tender           —           —         [31m        ERR[0m
+              epc_stock             —           —         [90m          ?[0m
+              legislation           —           —         [90m          ?[0m
+              gov_publications      —           —         [90m          ?[0m
+              gov_grants            —           —         [90m          ?[0m
+              evspark_trades        —           —         [31m        ERR[0m
+[2m  ────────────────────────────────────────────────────────────────────[0m
+  powstock    yahoo_finance         08:06       2h30m     [32m         ok[0m
+              investegate_rns       08:06       2h30m     [32m         ok[0m
+              companies_house       —           —         [36m     NO_KEY[0m
+              investegate_pdmr      08:06       2h30m     [32m         ok[0m
+              fca_ansp              08:06       2h30m     [32m         ok[0m
+              takeover_panel        —           —         [90m          ?[0m
+              fca_tr1               —           —         [90m          ?[0m
+              commodity_prices      —           —         [90m          ?[0m
+              companies_house_psc   —           —         [90m        ---[0m
+              ch_company_snapshot   —           —         [90m        ---[0m
+              ch_accounts_bulk      —           —         [90m        ---[0m
+              companies_house_filings—           —         [90m        ---[0m
+              finnhub               —           —         [90m        ---[0m
+              uk_parliament         —           —         [90m        ---[0m
+              congress_trades       —           —         [90m        ---[0m
+              european_insiders     —           —         [90m        ---[0m
+              dmo_gilts             —           —         [90m        ---[0m
+              fca_nsm               —           —         [90m        ---[0m
+[2m  ────────────────────────────────────────────────────────────────────[0m
+  powproducts robotshop_uk          09:13       1h22m     [32m         ok[0m
+              pci_ids               —           —         [90m        ---[0m
+              oshwa                 —           —         [90m        ---[0m
+              robotis_dynamixel     —           —         [90m        ---[0m
+              robot_descriptions    —           —         [90m        ---[0m
+              mujoco_menagerie      —           —         [90m        ---[0m
+              blender_open_data     —           —         [90m        ---[0m
+              microbt_official      —           —         [90m        ---[0m
+[2m  ────────────────────────────────────────────────────────────────────[0m
+  powrobots   hmrc_traders          07:46       2h50m     [32m         ok[0m
+              hmrc_trade            07:01       3h35m     [32m         ok[0m
+              ukri_gtr              08:36       2h00m     [32m         ok[0m
+              rbtx                  07:01       3h34m     [32m         ok[0m
+              opss_safety           08:36       2h00m     [32m         ok[0m
+              bara_directory        07:01       3h35m     [32m         ok[0m
+              bgs_minerals          07:01       3h34m     [32m         ok[0m
+              contracts_finder      —           2h47m     [31m        ERR[0m
+              ons_ppi               07:01       3h34m     [32m         ok[0m
+              find_apprenticeship   07:01       3h34m     [32m         ok[0m
+              companies_house       —           —         [36m     NO_KEY[0m
+              mouser                —           —         [36m     NO_KEY[0m
+              farnell               —           —         [36m     NO_KEY[0m
+              lcsc                  —           —         [36m     NO_KEY[0m
+              ebay_uk               —           —         [36m     NO_KEY[0m
+[2m  ────────────────────────────────────────────────────────────────────[0m
+  powphysical lcsc_physical         —           —         [90m          ?[0m
+              m5stack               —           —         [90m          ?[0m
+              waveshare             —           —         [90m          ?[0m
+[2m  ────────────────────────────────────────────────────────────────────[0m
+
+  [2m31/42 sources OK | powpowpow: 7/7 ok | repair: 1/7 ok | powuk: 9/24 ok, 4 issues | powstock: 4/18 ok | powproducts: 1/8 ok | powrobots: 9/15 ok, 1 issues | powphysical: 0/3 ok[0m
+

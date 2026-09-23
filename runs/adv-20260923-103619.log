@@ -1,0 +1,9 @@
+ADV-1 fresh->ok aged->stale missing->error future->error: PASS
+ADV-2a intact verifies (903 entries): PASS
+ADV-2b tamper detected at 0: PASS
+ADV-3 open->escalate->resolve->gone: PASS
+ADV-4 fire-once suppress-repeat recovery: PASS
+ADV-5 volume-needs-history schema-add/remove/type: PASS
+ADV-7 unknown-source/schema/timeline graceful: PASS
+ADV-8 evidence levels correct across 82 sources: PASS
+ALL ADV EVIDENCE PASS

@@ -1,0 +1,86 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/ubuntu/powops
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collecting ... collected 70 items
+
+tests/test_mcp.py::test_mcp_initialize_and_list_tools PASSED             [  1%]
+tests/test_mcp_full.py::test_mcp_all_tools PASSED                        [  2%]
+tests/test_new_features.py::TestHistory::test_record_and_query PASSED    [  4%]
+tests/test_new_features.py::TestHistory::test_query_by_garden PASSED     [  5%]
+tests/test_new_features.py::TestHistory::test_query_by_status PASSED     [  7%]
+tests/test_new_features.py::TestHistory::test_timeline_dedup PASSED      [  8%]
+tests/test_new_features.py::TestHistory::test_uptime_stats PASSED        [ 10%]
+tests/test_new_features.py::TestHistory::test_list_history_files PASSED  [ 11%]
+tests/test_new_features.py::TestAlerts::test_no_alert_on_first_check PASSED [ 12%]
+tests/test_new_features.py::TestAlerts::test_alert_on_transition PASSED  [ 14%]
+tests/test_new_features.py::TestAlerts::test_recovery_on_ok PASSED       [ 15%]
+tests/test_new_features.py::TestAlerts::test_no_duplicate_alerts PASSED  [ 17%]
+tests/test_new_features.py::TestAlerts::test_disabled_source PASSED      [ 18%]
+tests/test_new_features.py::TestAlerts::test_alert_payload PASSED        [ 20%]
+tests/test_new_features.py::TestAlerts::test_recovery_payload PASSED     [ 21%]
+tests/test_new_features.py::TestVolume::test_record_and_query PASSED     [ 22%]
+tests/test_new_features.py::TestVolume::test_rolling_stats PASSED        [ 24%]
+tests/test_new_features.py::TestVolume::test_rolling_stats_empty PASSED  [ 25%]
+tests/test_new_features.py::TestVolume::test_anomaly_detection_no_data PASSED [ 27%]
+tests/test_new_features.py::TestVolume::test_anomaly_detection_normal PASSED [ 28%]
+tests/test_new_features.py::TestVolume::test_anomaly_detection_drop PASSED [ 30%]
+tests/test_new_features.py::TestVolume::test_volume_summary PASSED       [ 31%]
+tests/test_new_features.py::TestSchema::test_snapshot_and_query PASSED   [ 32%]
+tests/test_new_features.py::TestSchema::test_no_drift_first_time PASSED  [ 34%]
+tests/test_new_features.py::TestSchema::test_drift_on_new_column PASSED  [ 35%]
+tests/test_new_features.py::TestSchema::test_drift_on_removed_column PASSED [ 37%]
+tests/test_new_features.py::TestSchema::test_drift_on_type_change PASSED [ 38%]
+tests/test_new_features.py::TestSchema::test_list_schemas PASSED         [ 40%]
+tests/test_new_features.py::TestSchema::test_schema_history PASSED       [ 41%]
+tests/test_powops.py::TestParseDuration::test_seconds PASSED             [ 42%]
+tests/test_powops.py::TestParseDuration::test_minutes PASSED             [ 44%]
+tests/test_powops.py::TestParseDuration::test_hours PASSED               [ 45%]
+tests/test_powops.py::TestParseDuration::test_days PASSED                [ 47%]
+tests/test_powops.py::TestParseDuration::test_default PASSED             [ 48%]
+tests/test_powops.py::TestParseTs::test_iso_with_z PASSED                [ 50%]
+tests/test_powops.py::TestParseTs::test_iso_with_offset PASSED           [ 51%]
+tests/test_powops.py::TestParseTs::test_none PASSED                      [ 52%]
+tests/test_powops.py::TestParseTs::test_empty PASSED                     [ 54%]
+tests/test_powops.py::TestParseTs::test_invalid PASSED                   [ 55%]
+tests/test_powops.py::TestHeartbeatRead::test_fresh_heartbeat PASSED     [ 57%]
+tests/test_powops.py::TestHeartbeatRead::test_stale_heartbeat PASSED     [ 58%]
+tests/test_powops.py::TestHeartbeatRead::test_missing_file PASSED        [ 60%]
+tests/test_powops.py::TestHeartbeatRead::test_invalid_json PASSED        [ 61%]
+tests/test_powops.py::TestCollectorDbRead::test_fresh_run PASSED         [ 62%]
+tests/test_powops.py::TestCollectorDbRead::test_stale_run PASSED         [ 64%]
+tests/test_powops.py::TestCollectorDbRead::test_error_run PASSED         [ 65%]
+tests/test_powops.py::TestCollectorDbRead::test_no_runs PASSED           [ 67%]
+tests/test_powops.py::TestCollectorDbRead::test_missing_db PASSED        [ 68%]
+tests/test_powops.py::TestRawMtimeRead::test_fresh_files PASSED          [ 70%]
+tests/test_powops.py::TestRawMtimeRead::test_stale_files PASSED          [ 71%]
+tests/test_powops.py::TestRawMtimeRead::test_missing_dir PASSED          [ 72%]
+tests/test_powops.py::TestRawMtimeRead::test_empty_dir PASSED            [ 74%]
+tests/test_powops.py::TestPidFileRead::test_live_pid PASSED              [ 75%]
+tests/test_powops.py::TestPidFileRead::test_stale_pid PASSED             [ 77%]
+tests/test_powops.py::TestPidFileRead::test_missing_pid_file PASSED      [ 78%]
+tests/test_powops.py::TestPidFileRead::test_invalid_pid_file PASSED      [ 80%]
+tests/test_powops.py::TestHealthAggregation::test_garden_summary PASSED  [ 81%]
+tests/test_powops.py::TestHealthAggregation::test_overall_all_ok PASSED  [ 82%]
+tests/test_powops.py::TestHealthAggregation::test_overall_degraded PASSED [ 84%]
+tests/test_powops.py::TestHealthAggregation::test_overall_partial_outage PASSED [ 85%]
+tests/test_powops.py::TestHealthAggregation::test_overall_ignores_not_installed PASSED [ 87%]
+tests/test_powops.py::TestStatusRendering::test_format_age_seconds PASSED [ 88%]
+tests/test_powops.py::TestStatusRendering::test_format_age_minutes PASSED [ 90%]
+tests/test_powops.py::TestStatusRendering::test_format_age_hours PASSED  [ 91%]
+tests/test_powops.py::TestStatusRendering::test_format_age_days PASSED   [ 92%]
+tests/test_powops.py::TestStatusRendering::test_format_age_none PASSED   [ 94%]
+tests/test_powops.py::TestStatusRendering::test_render_table PASSED      [ 95%]
+tests/test_powops.py::TestStatusRendering::test_render_json PASSED       [ 97%]
+tests/test_powops.py::TestManifest::test_load_real_manifest PASSED       [ 98%]
+tests/test_powops.py::TestManifest::test_manifest_source_fields PASSED   [100%]
+
+=============================== warnings summary ===============================
+tests/test_mcp.py::test_mcp_initialize_and_list_tools
+  /home/ubuntu/powops/tests/test_mcp.py:94: DeprecationWarning: There is no current event loop
+    result = asyncio.get_event_loop().run_until_complete(_run_mcp_test())
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 70 passed, 1 warning in 6.18s =========================

@@ -1,0 +1,19 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/ubuntu/powops
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collected 1 item
+
+tests/test_mcp_full.py 
+passed (17): ['powops_status', 'powops_source', 'powops_history', 'powops_uptime', 'powops_timeline', 'powops_volume', 'powops_volume_source', 'powops_incidents', 'powops_coverage', 'powops_schemas', 'powops_schema', 'powops_schema_history', 'powops_verify', 'powops_sources', 'powops_events', 'powops_alerts', 'powops_repos']
+failed (0): []
+.
+
+=============================== warnings summary ===============================
+tests/test_mcp_full.py::test_mcp_all_tools
+  /home/ubuntu/powops/tests/test_mcp_full.py:126: DeprecationWarning: There is no current event loop
+    passed, failed = asyncio.get_event_loop().run_until_complete(_stdio_call_all())
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+========================= 1 passed, 1 warning in 4.77s =========================
