@@ -195,6 +195,9 @@ def check_all_full(
     if fire_alerts:
         from .alerts import process_alerts
         from .alerts import _load_alert_state
+        # Snapshot pre-run state BEFORE process_alerts saves new state.
+        # The incident comparison below must use this, not the updated file.
+        pre_state = _load_alert_state()
         manifest = load_manifest(path)
         sources = manifest.get("sources", [])
 
@@ -242,7 +245,7 @@ def check_all_full(
         for r in results:
             if not r.source_id:
                 continue
-            old_status = _load_alert_state().get(r.source_id, {}).get("status", "ok")
+            old_status = pre_state.get(r.source_id, {}).get("status", "ok")
             new_status = r.status
 
             if old_status == new_status:
