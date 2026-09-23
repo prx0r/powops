@@ -13,7 +13,7 @@ Each garden is growing its own interface. powops is the integrated monitoring la
 |--------|----------|----------|-------|-----------------|
 | powops | yes (16 tools) | yes (dashboard) | status, history, uptime, incidents, events, coverage, schemas, verify, sources, alerts, volume, timeline, repos | enabled in opencode.jsonc |
 | powstock | yes (10 tools) | yes (FastAPI) | health, universe, prices, insiders, short_interest, rns, companies, signals, runs, collectors, summary | exists, not yet enabled |
-| powpowpow | yes (6 tools) | yes (site/server.py) | asset_state, signals, factors, compute_routes, miner_pressure, brief | exists, not yet enabled |
+| powpowpow | yes (10 tools upstream, 6 local) | yes (site/server.py) | asset_state, signals, factors, compute_routes, miner_pressure, brief, +get_live, +get_xmr_full upstream | exists, not yet enabled |
 | powphysical | yes (6 tools) | no | search, resolve, compare, save_build, get_build, reprice | fixture data only — do not enable yet |
 | powuk | no (spec only) | no (collector runner) | — | via powops only |
 | repair | no | no | — | via powops only |
