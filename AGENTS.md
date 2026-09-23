@@ -1,6 +1,8 @@
 # AGENTS.md — powops operations
 
 > Layer 1 command centre for POW gardens. Answers one question: is the data flowing?
+>
+> **New here? Read HANDOVER.md first** — current state, what's running, what's open.
 
 ## What this is
 
