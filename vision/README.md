@@ -13,6 +13,7 @@ POWOps is the global northstar for all POW repositories. These documents define 
 | `ministar.md` | Immediate priorities — visibility, verification, mission control |
 | `shopifygoat.md` | E-commerce alpha dossier — Shopify intelligence × POW data-garden thesis |
 | `robotprintify.md` | Consumer physical agents — ESP32-based product platform from POW data |
+| `commercial2.md` | Robotics procurement business model — three gardens, four revenue streams |
 
 ## The POW Thesis
 
