@@ -20,6 +20,9 @@ rewritten. Local backtest.py rewrite preserved on branch
 **Impact:** none on monitoring (powops reads artifacts, not code). Collectors 7/7 OK.
 **Fix:** owner must reconcile (merge or rebase) — do NOT auto-merge on the
 live collector host. Upstream MCP now 10 tools; note in DEVMAP when merged.
+**Update 2026-09-23:** 2 more upstream commits (BTC L2 venue universe +
+SafeTrade seeds, BTC fee/pool telemetry live). Collectors still 7/7 OK —
+monitoring reads artifacts, unaffected. Now 12 upstream vs 33 local.
 **Priority:** medium.
 
 ## Thread 22: powstock ingest_run empty
