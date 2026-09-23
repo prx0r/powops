@@ -18,17 +18,17 @@ import sys
 from pathlib import Path
 
 from mcp.server.mcpserver import MCPServer
-from mcp.types import Tool, TextContent
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
 from powops.health import check_all, garden_summary, overall_status
 from powops.history import get_history, get_source_timeline, get_uptime_stats, verify_chain
-from powops.volume import get_volume_summary
-from powops.schema import list_schemas, get_schema_snapshot
+from powops.volume import get_volume_summary, get_volume_history
+from powops.schema import list_schemas, get_schema_snapshot, get_schema_history
 from powops.alerts import get_alert_state
 from powops.incidents import get_incidents, get_open_incidents
+from powops.events import get_events
 from powops.config import STATE_DIR, HISTORY_DIR
 
 MANIFEST = os.path.join(ROOT, "powops", "sources.yaml")
@@ -223,6 +223,72 @@ async def powops_events(days: int = 1, garden: str = "", event_type: str = "") -
         event_type=event_type or None,
     )
     return json.dumps({"count": len(events), "events": events}, indent=2)
+
+
+@mcp.tool()
+async def powops_alerts() -> str:
+    """Get current alert state for all sources. Shows which sources are in alerting state."""
+    state = await _run_sync(get_alert_state)
+    return json.dumps({"alerts": state}, indent=2)
+
+
+@mcp.tool()
+async def powops_volume(days: int = 7) -> str:
+    """Get volume summary — row count statistics per source over time.
+
+    Args:
+        days: Days back (default 7)
+    """
+    summary = await _run_sync(get_volume_summary, days=days)
+    return json.dumps({"days": days, "sources": summary}, indent=2)
+
+
+@mcp.tool()
+async def powops_volume_source(source_id: str, days: int = 14) -> str:
+    """Get volume history for a specific source.
+
+    Args:
+        source_id: Source ID to look up
+        days: Days back (default 14)
+    """
+    history = await _run_sync(get_volume_history, source_id, days=days)
+    return json.dumps({"source": source_id, "days": days, "history": history}, indent=2)
+
+
+@mcp.tool()
+async def powops_timeline(source: str, days: int = 7) -> str:
+    """Get status transition timeline for a source — shows when status changed.
+
+    Args:
+        source: Source ID to get timeline for
+        days: Days back (default 7)
+    """
+    timeline = await _run_sync(get_source_timeline, source, days=days)
+    return json.dumps({"source": source, "timeline": timeline}, indent=2)
+
+
+@mcp.tool()
+async def powops_schema(source_id: str) -> str:
+    """Get the latest schema snapshot for a specific source.
+
+    Args:
+        source_id: Source ID to look up
+    """
+    snap = await _run_sync(get_schema_snapshot, source_id)
+    if snap is None:
+        return json.dumps({"error": f"no schema for {source_id}"})
+    return json.dumps(snap, indent=2)
+
+
+@mcp.tool()
+async def powops_schema_history(source_id: str) -> str:
+    """Get schema change history for a specific source.
+
+    Args:
+        source_id: Source ID to look up
+    """
+    history = await _run_sync(get_schema_history, source_id)
+    return json.dumps({"source": source_id, "history": history}, indent=2)
 
 
 async def main():

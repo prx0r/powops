@@ -13,9 +13,6 @@ from .garden import (
     GardenReader,
     SourceStatus,
     _compute_check_hash,
-    _parse_duration,
-    _age_since,
-    _parse_ts,
 )
 
 
@@ -182,6 +179,130 @@ def check_all_full(
 
         alert_actions = process_alerts(results, alert_configs, dry_run=dry_run)
         actions["alerts_fired"] = alert_actions
+
+        # Record events for status changes
+        from .events import record_event
+        for a in alert_actions:
+            sid = a.get("source_id", "")
+            action = a.get("action", "")
+            new_status = a.get("new_status", "")
+            # Find the matching result for garden info
+            match = [r for r in results if r.source_id == sid]
+            garden = match[0].garden if match else ""
+            if action == "alert":
+                record_event(
+                    event_type=f"source_{new_status}",
+                    garden=garden,
+                    source_id=sid,
+                    severity="critical" if new_status == "error" else "warning",
+                    details={"webhook": a.get("webhook", {})},
+                )
+            elif action == "recovery":
+                record_event(
+                    event_type="source_recovered",
+                    garden=garden,
+                    source_id=sid,
+                    severity="info",
+                )
+
+        # Process incidents on state transitions
+        from .incidents import (
+            create_incident, update_incident, resolve_incident,
+            find_open_incident,
+        )
+        for r in results:
+            if not r.source_id:
+                continue
+            old_status = _load_alert_state().get(r.source_id, {}).get("status", "ok")
+            new_status = r.status
+
+            if old_status == new_status:
+                continue
+
+            # Problem emerged: open incident
+            if old_status == "ok" and new_status in ("stale", "error", "blocked", "no_key"):
+                severity = "critical" if new_status == "error" else "warning"
+                incident = create_incident(
+                    source_id=r.source_id,
+                    garden=r.garden,
+                    severity=severity,
+                    reason=f"Status changed from ok to {new_status}",
+                    last_success=r.last_success.isoformat() if r.last_success else None,
+                    error=r.error,
+                )
+                record_event(
+                    event_type="incident_opened",
+                    garden=r.garden,
+                    source_id=r.source_id,
+                    incident_id=incident["incident_id"],
+                    severity=severity,
+                )
+
+            # Problem deepened: update incident
+            elif old_status in ("stale", "no_key") and new_status == "error":
+                existing = find_open_incident(r.source_id)
+                if existing:
+                    update_incident(
+                        existing["incident_id"],
+                        severity="critical",
+                        reason=f"Status degraded from {old_status} to {new_status}",
+                        error=r.error,
+                    )
+                    record_event(
+                        event_type="incident_updated",
+                        garden=r.garden,
+                        source_id=r.source_id,
+                        incident_id=existing["incident_id"],
+                        severity="critical",
+                    )
+
+            # Recovered: resolve incident
+            elif old_status in ("stale", "error", "blocked", "no_key") and new_status == "ok":
+                existing = find_open_incident(r.source_id)
+                if existing:
+                    resolve_incident(existing["incident_id"])
+                    record_event(
+                        event_type="incident_closed",
+                        garden=r.garden,
+                        source_id=r.source_id,
+                        incident_id=existing["incident_id"],
+                        severity="info",
+                    )
+
+    # Schema drift detection (runs after alerts/incidents)
+    actions["schema_drifts"] = []
+    for r in results:
+        if r.source_id and r.details:
+            schema_info = r.details.get("schema")
+            if schema_info:
+                from .schema import check_and_update_schema
+                drift = check_and_update_schema(r.source_id, r.garden, schema_info)
+                if drift:
+                    actions["schema_drifts"].append(drift)
+                    from .events import record_event
+                    record_event(
+                        event_type="schema_changed",
+                        garden=r.garden,
+                        source_id=r.source_id,
+                        details={"drifts": drift.get("drifts", [])},
+                    )
+
+    # Volume anomaly detection
+    actions["volume_anomalies"] = []
+    for r in results:
+        if r.source_id and r.records is not None:
+            from .volume import detect_volume_anomaly
+            anomaly = detect_volume_anomaly(r.source_id, r.records)
+            if anomaly:
+                actions["volume_anomalies"].append(anomaly)
+                from .events import record_event
+                record_event(
+                    event_type="volume_anomaly",
+                    garden=r.garden,
+                    source_id=r.source_id,
+                    severity="warning",
+                    details=anomaly,
+                )
 
     return {
         "results": results,

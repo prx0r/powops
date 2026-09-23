@@ -40,7 +40,7 @@ def create_incident(
     _ensure_dir()
     now = datetime.now(timezone.utc).isoformat()
     date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
-    incident_id = f"inc:{date_str}:{garden}:{source_id}"
+    incident_id = f"inc-{date_str}-{garden}-{source_id}"
 
     incident = {
         "incident_id": incident_id,

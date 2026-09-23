@@ -11,7 +11,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from .garden import SourceStatus
 from .config import SCHEMA_DIR
 
 

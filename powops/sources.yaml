@@ -45,6 +45,26 @@ gardens:
     health_check: raw_mtime
     storage: data/raw/
 
+  powproducts:
+    path: /home/ubuntu/powproducts
+    description: Canonical product identity, components, compatibility and market state
+    health_check: collector_db
+    db_path: warehouse/powproducts.db
+    storage: warehouse/
+
+  powrobots:
+    path: /home/ubuntu/powrobots
+    description: UK robotics adoption, supply chains, components, trade flows
+    health_check: collector_db
+    db_path: warehouse/powrobots.db
+    storage: warehouse/
+
+  powphysical:
+    path: /home/ubuntu/powphysical
+    description: Supplier adapters, BOM resolution and manufacturing routing
+    health_check: raw_mtime
+    storage: data/raw/
+
 sources:
   # ═══════════════════════════════════════════════════════════
   # POWPOWPOW — compute / PoW chain telemetry
@@ -399,3 +419,315 @@ sources:
       check: raw_mtime
       directory: data/raw/psc_snapshot
       max_staleness: 168h
+
+  # ═══════════════════════════════════════════════════════════
+  # POWPRODUCTS — canonical product identity and compatibility
+  # ═══════════════════════════════════════════════════════════
+
+  - id: robotshop_uk
+    garden: powproducts
+    authority: RobotShop
+    type: scrape
+    description: UK robotics component retailer catalogue
+    cadence: 6h
+    health:
+      check: collector_db
+      source_id: robotshop_uk
+      max_staleness: 24h
+    alert:
+      enabled: false
+
+  - id: pci_ids
+    garden: powproducts
+    authority: PCI ID Repository
+    type: download
+    description: PCI device ID database
+    cadence: weekly
+    status: not_installed
+    health:
+      check: collector_db
+      source_id: pci_ids
+      max_staleness: 168h
+
+  - id: oshwa
+    garden: powproducts
+    authority: OSHWA
+    type: api
+    description: Open source hardware certification registry
+    cadence: weekly
+    status: not_installed
+    health:
+      check: collector_db
+      source_id: oshwa
+      max_staleness: 168h
+
+  - id: robotis_dynamixel
+    garden: powproducts
+    authority: ROBOTIS
+    type: docs
+    description: DYNAMIXEL servomotor specifications and CAD
+    cadence: weekly
+    status: not_installed
+    health:
+      check: collector_db
+      source_id: robotis_dynamixel
+      max_staleness: 168h
+
+  - id: robot_descriptions
+    garden: powproducts
+    authority: ROS Index
+    type: curated
+    description: Robot description packages (URDF/XACRO)
+    cadence: weekly
+    status: not_installed
+    health:
+      check: collector_db
+      source_id: robot_descriptions
+      max_staleness: 168h
+
+  - id: mujoco_menagerie
+    garden: powproducts
+    authority: Google DeepMind
+    type: curated
+    description: MuJoCo simulation model library
+    cadence: weekly
+    status: not_installed
+    health:
+      check: collector_db
+      source_id: mujoco_menagerie
+      max_staleness: 168h
+
+  - id: blender_open_data
+    garden: powproducts
+    authority: Blender Foundation
+    type: download
+    description: Blender open data assets
+    cadence: weekly
+    status: not_installed
+    health:
+      check: collector_db
+      source_id: blender_open_data
+      max_staleness: 168h
+
+  - id: microbt_official
+    garden: powproducts
+    authority: MicroBT
+    type: web
+    description: MicroBT mining hardware catalogue
+    cadence: 6h
+    status: not_installed
+    health:
+      check: collector_db
+      source_id: microbt_official
+      max_staleness: 24h
+
+  # ═══════════════════════════════════════════════════════════
+  # POWROBOTS — UK robotics adoption, supply chains, components
+  # ═══════════════════════════════════════════════════════════
+
+  - id: hmrc_traders
+    garden: powrobots
+    authority: HMRC
+    type: api
+    description: UK robotics/electronics import/export traders
+    cadence: daily
+    health:
+      check: collector_db
+      source_id: hmrc_traders
+      max_staleness: 72h
+
+  - id: hmrc_trade
+    garden: powrobots
+    authority: HMRC
+    type: api
+    description: UK robotics/electronics trade flow data
+    cadence: daily
+    health:
+      check: collector_db
+      source_id: hmrc_trade
+      max_staleness: 72h
+
+  - id: ukri_gtr
+    garden: powrobots
+    authority: UKRI
+    type: api
+    description: UK robotics research grants
+    cadence: daily
+    health:
+      check: collector_db
+      source_id: ukri_gtr
+      max_staleness: 72h
+
+  - id: rbtx
+    garden: powrobots
+    authority: RBTX
+    type: scrape
+    description: Low-cost robotics component marketplace
+    cadence: daily
+    health:
+      check: collector_db
+      source_id: rbtx
+      max_staleness: 72h
+
+  - id: opss_safety
+    garden: powrobots
+    authority: OPSS
+    type: api
+    description: UK product safety recalls and alerts
+    cadence: daily
+    health:
+      check: collector_db
+      source_id: opss_safety
+      max_staleness: 72h
+
+  - id: bara_directory
+    garden: powrobots
+    authority: BARA
+    type: scrape
+    description: British Automation & Robot Association member directory
+    cadence: weekly
+    health:
+      check: collector_db
+      source_id: bara_directory
+      max_staleness: 168h
+
+  - id: bgs_minerals
+    garden: powrobots
+    authority: BGS
+    type: api
+    description: UK critical minerals supply data
+    cadence: weekly
+    health:
+      check: collector_db
+      source_id: bgs_minerals
+      max_staleness: 168h
+
+  - id: contracts_finder
+    garden: powrobots
+    authority: Contracts Finder
+    type: api
+    description: UK public procurement contracts
+    cadence: daily
+    health:
+      check: collector_db
+      source_id: contracts_finder
+      max_staleness: 72h
+
+  - id: ons_ppi
+    garden: powrobots
+    authority: ONS
+    type: api
+    description: UK Producer Price Index for electronics
+    cadence: daily
+    health:
+      check: collector_db
+      source_id: ons_ppi
+      max_staleness: 72h
+
+  - id: find_apprenticeship
+    garden: powrobots
+    authority: Find an Apprenticeship
+    type: api
+    description: UK robotics/automation apprenticeship listings
+    cadence: daily
+    health:
+      check: collector_db
+      source_id: find_apprenticeship
+      max_staleness: 72h
+
+  - id: companies_house
+    garden: powrobots
+    authority: Companies House
+    type: api
+    description: UK robotics company registrations
+    cadence: daily
+    api_key_env: COMPANIES_HOUSE_API_KEY
+    health:
+      check: collector_db
+      source_id: companies_house
+      max_staleness: 72h
+
+  - id: mouser
+    garden: powrobots
+    authority: Mouser
+    type: api
+    description: Electronic component pricing and stock
+    cadence: daily
+    api_key_env: MOUSER_API_KEY
+    health:
+      check: collector_db
+      source_id: mouser
+      max_staleness: 72h
+
+  - id: farnell
+    garden: powrobots
+    authority: Farnell
+    type: api
+    description: UK electronic component catalogue
+    cadence: daily
+    api_key_env: FARNELL_API_KEY
+    health:
+      check: collector_db
+      source_id: farnell
+      max_staleness: 72h
+
+  - id: lcsc
+    garden: powrobots
+    authority: LCSC
+    type: api
+    description: Chinese electronic component pricing
+    cadence: daily
+    api_key_env: LCSC_API_KEY
+    health:
+      check: collector_db
+      source_id: lcsc
+      max_staleness: 72h
+
+  - id: ebay_uk
+    garden: powrobots
+    authority: eBay
+    type: api
+    description: UK secondhand robotics equipment listings
+    cadence: daily
+    api_key_env: EBAY_APP_ID
+    health:
+      check: collector_db
+      source_id: ebay_uk
+      max_staleness: 72h
+
+  # ═══════════════════════════════════════════════════════════
+  # POWPHYSICAL — supplier adapters and BOM resolution
+  # ═══════════════════════════════════════════════════════════
+
+  - id: lcsc_physical
+    garden: powphysical
+    authority: LCSC
+    type: api
+    description: LCSC component search and pricing (adapter)
+    cadence: daily
+    health:
+      check: raw_mtime
+      directory: data/raw/lcsc
+      max_staleness: 72h
+
+  - id: m5stack
+    garden: powphysical
+    authority: M5Stack
+    type: scrape
+    description: M5Stack module catalogue and pricing
+    cadence: daily
+    health:
+      check: raw_mtime
+      directory: data/raw/m5stack
+      max_staleness: 72h
+
+  - id: waveshare
+    garden: powphysical
+    authority: Waveshare
+    type: scrape
+    description: Waveshare module catalogue and pricing
+    cadence: daily
+    health:
+      check: raw_mtime
+      directory: data/raw/waveshare
+      max_staleness: 72h

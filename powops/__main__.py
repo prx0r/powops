@@ -21,6 +21,9 @@ import sys
 
 
 def main():
+    from .config import ensure_dirs
+    ensure_dirs()
+
     parser = argparse.ArgumentParser(
         prog="powops",
         description="Layer 1 command centre for POW gardens",
@@ -76,6 +79,25 @@ def main():
     backup_p = sub.add_parser("backup", help="Sync raw data to R2")
     backup_p.add_argument("--garden", help="Sync specific garden only")
     backup_p.add_argument("--dry-run", action="store_true", help="Dry run")
+
+    # incidents
+    inc_p = sub.add_parser("incidents", help="Show incidents")
+    inc_p.add_argument("--status", default="open", help="Filter by status (open, resolved, all)")
+    inc_p.add_argument("--garden", help="Filter to one garden")
+    inc_p.add_argument("--source", help="Filter to one source")
+    inc_p.add_argument("--json", action="store_true", help="Output as JSON")
+
+    # events
+    ev_p = sub.add_parser("events", help="Show recent events")
+    ev_p.add_argument("--days", type=int, default=1, help="Days back (default 1)")
+    ev_p.add_argument("--garden", help="Filter to one garden")
+    ev_p.add_argument("--source", help="Filter to one source")
+    ev_p.add_argument("--type", help="Filter by event type")
+    ev_p.add_argument("--json", action="store_true", help="Output as JSON")
+
+    # repos
+    repos_p = sub.add_parser("repos", help="Show GitHub repo status")
+    repos_p.add_argument("--json", action="store_true", help="Output as JSON")
 
     args = parser.parse_args()
 
@@ -246,6 +268,66 @@ def main():
             print_backup_status(results)
         else:
             print("  No r2_sync.sh scripts found.")
+
+    elif args.command == "incidents":
+        from .incidents import get_incidents
+        if args.status == "all":
+            incidents = get_incidents(garden=args.garden, source_id=args.source)
+        else:
+            incidents = get_incidents(status=args.status, garden=args.garden, source_id=args.source)
+        if args.json:
+            print(json.dumps(incidents, indent=2))
+        else:
+            if not incidents:
+                print("  No incidents found.")
+            else:
+                print(f"\n  {'ID':<34} {'SOURCE':<22} {'GARDEN':<12} {'STATUS':<10} {'SEVERITY':<10} {'OPENED'}")
+                print(f"  {'─'*34} {'─'*22} {'─'*12} {'─'*10} {'─'*10} {'─'*19}")
+                for inc in incidents:
+                    iid = inc.get("incident_id", "")
+                    sid = inc.get("source_id", "")
+                    g = inc.get("garden", "")
+                    st = inc.get("status", "")
+                    sev = inc.get("severity", "")
+                    opened = inc.get("opened_at", "")[:19]
+                    print(f"  {iid:<34} {sid:<22} {g:<12} {st:<10} {sev:<10} {opened}")
+                print(f"\n  {len(incidents)} incidents")
+                print()
+
+    elif args.command == "events":
+        from .events import get_events
+        events = get_events(
+            days=args.days,
+            garden=args.garden,
+            source_id=args.source,
+            event_type=args.type,
+        )
+        if args.json:
+            print(json.dumps(events, indent=2))
+        else:
+            if not events:
+                print("  No events found.")
+            else:
+                print(f"\n  {'TIME':<22} {'TYPE':<24} {'SOURCE':<22} {'GARDEN':<12} {'SEVERITY':<10}")
+                print(f"  {'─'*22} {'─'*24} {'─'*22} {'─'*12} {'─'*10}")
+                for e in events:
+                    at = e.get("at", "")[:19]
+                    t = e.get("type", "")
+                    sid = e.get("source_id", "")
+                    g = e.get("garden", "")
+                    sev = e.get("severity", "")
+                    print(f"  {at:<22} {t:<24} {sid:<22} {g:<12} {sev:<10}")
+                print(f"\n  {len(events)} events")
+                print()
+
+    elif args.command == "repos":
+        from .repos import get_all_repos, format_repo_table
+        repos = get_all_repos()
+        if args.json:
+            print(json.dumps(repos, indent=2, default=str))
+        else:
+            print(format_repo_table(repos))
+            print()
 
     else:
         parser.print_help()

@@ -39,6 +39,9 @@ from powops.history import get_history, get_source_timeline, get_uptime_stats
 from powops.volume import get_volume_summary, get_volume_history
 from powops.schema import list_schemas, get_schema_snapshot
 from powops.alerts import get_alert_state
+from powops.incidents import get_incidents
+from powops.events import get_events
+from powops.repos import get_all_repos
 from powops.config import STATE_DIR
 
 PORT = int(os.environ.get("POWOPS_PORT", "8796"))
@@ -86,7 +89,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")
-        self.send_header("Content-Security-Policy", "default-src 'self'")
+        self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'")
 
     def _json(self, obj, code: int = 200):
         data = json.dumps(obj, default=str).encode()
@@ -191,6 +194,34 @@ class Handler(BaseHTTPRequestHandler):
         if u.path == "/api/alerts":
             state = get_alert_state()
             return self._json({"alerts": state})
+
+        # Incidents
+        if u.path == "/api/incidents":
+            status_f = arg("status") or "open"
+            garden = arg("garden") or None
+            source = arg("source") or None
+            if status_f == "all":
+                incidents = get_incidents(garden=garden, source_id=source)
+            else:
+                incidents = get_incidents(status=status_f, garden=garden, source_id=source)
+            return self._json({"incidents": incidents, "count": len(incidents)})
+
+        # Events
+        if u.path == "/api/events":
+            days = _clamp_days(arg("days", "1"))
+            garden = arg("garden") or None
+            source = arg("source") or None
+            event_type = arg("type") or None
+            events = get_events(days=days, garden=garden, source_id=source, event_type=event_type)
+            return self._json({"events": events, "count": len(events)})
+
+        # Repos — GitHub commit and CI status
+        if u.path == "/api/repos":
+            try:
+                repos = get_all_repos()
+                return self._json({"repos": repos})
+            except Exception as e:
+                return self._json({"error": str(e)}, 500)
 
         return self._json({"error": "not found"}, 404)
 

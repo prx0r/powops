@@ -295,7 +295,8 @@ class TestPidFileRead:
         (tmp_path / "daemon.pid").write_text(str(os.getpid()))
         reader = GardenReader("test", {"path": str(tmp_path)})
         status = reader.read_pid_file({"file": "daemon.pid"})
-        assert status.status == "ok"
+        # Live PID without data validation is "unknown", not "ok"
+        assert status.status == "unknown"
         assert status.details["pid"] == os.getpid()
 
     def test_stale_pid(self, tmp_path):

@@ -51,6 +51,7 @@ class SourceStatus:
     bytes_new: Optional[int] = None
     error: Optional[str] = None
     check_hash: Optional[str] = None  # HMAC of (source_id + status + checked_at) — proves server checked
+    evidence_level: str = "weak"  # weak (mtime/pid), strong (heartbeat/collector_db with data)
     details: dict = field(default_factory=dict)
 
     def to_verified_dict(self) -> dict:
@@ -157,6 +158,26 @@ class GardenReader:
             )
 
         heartbeat_at = _parse_ts(data.get("heartbeat_at", ""))
+
+        # Reject missing, empty or unparseable timestamps
+        if heartbeat_at is None:
+            return SourceStatus(
+                source_id="", garden=self.garden_id,
+                authority="", description="",
+                status="error",
+                error=f"Heartbeat missing or unparseable heartbeat_at: {heartbeat_path}",
+            )
+
+        # Reject implausibly future-dated timestamps (>5min ahead)
+        now = datetime.now(timezone.utc)
+        if heartbeat_at > now + timedelta(minutes=5):
+            return SourceStatus(
+                source_id="", garden=self.garden_id,
+                authority="", description="",
+                status="error",
+                error=f"Heartbeat timestamp is in the future: {heartbeat_at.isoformat()}",
+            )
+
         age = _age_since(heartbeat_at)
         is_stale = age is not None and age > max_staleness
 
@@ -169,6 +190,7 @@ class GardenReader:
             status="stale" if is_stale else "ok",
             last_success=heartbeat_at,
             age=age,
+            evidence_level="strong",
             details=stats,
         )
 
@@ -257,18 +279,26 @@ class GardenReader:
             )
 
         started_at, status_str, error, duration, records_new, raw_new = row
-        last_good = _parse_ts(started_at)
-        age = _age_since(last_good)
+        last_attempt = _parse_ts(started_at)
+        age = _age_since(last_attempt)
         is_stale = age is not None and age > max_staleness
 
+        # For status resolution: distinguish failed attempts from successful ones.
+        # "running" is treated as stale (in-progress, not yet validated).
+        # "error" means the collector failed — do NOT use its timestamp as last_success.
         if status_str == "error":
             resolved = "error"
+            # Do not set last_success from a failed attempt
+            last_good = None
         elif is_stale:
             resolved = "stale"
+            last_good = last_attempt
         elif status_str == "running":
             resolved = "stale"
+            last_good = last_attempt
         else:
             resolved = "ok"
+            last_good = last_attempt
 
         return SourceStatus(
             source_id=source_id, garden=self.garden_id,
@@ -278,6 +308,7 @@ class GardenReader:
             age=age,
             records=records_new,
             error=error,
+            evidence_level="strong",
             details={"db_status": status_str, "duration": duration, "raw_new": raw_new},
         )
 
@@ -327,6 +358,7 @@ class GardenReader:
             last_success=last_good,
             age=age,
             records=file_count,
+            evidence_level="weak",
         )
 
     def read_pid_file(self, health_config: dict) -> SourceStatus:
@@ -353,10 +385,13 @@ class GardenReader:
 
         try:
             os.kill(pid, 0)
+            # Process is live, but we have no data-validation proof
             return SourceStatus(
                 source_id="", garden=self.garden_id,
                 authority="", description="",
-                status="ok",
+                status="unknown",
+                error=f"Process {pid} running (no data validation)",
+                evidence_level="weak",
                 details={"pid": pid},
             )
         except ProcessLookupError:
@@ -365,11 +400,14 @@ class GardenReader:
                 authority="", description="",
                 status="stale",
                 error=f"Process {pid} not running (stale PID)",
+                evidence_level="weak",
             )
         except PermissionError:
             return SourceStatus(
                 source_id="", garden=self.garden_id,
                 authority="", description="",
-                status="ok",
+                status="unknown",
+                error=f"Process {pid} running but not accessible",
+                evidence_level="weak",
                 details={"pid": pid},
             )

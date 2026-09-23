@@ -47,7 +47,7 @@ const G=(p)=>fetch(p+'?token='+encodeURIComponent(T)).then(r=>{if(!r.ok)throw ne
 let V='status';
 setInterval(()=>{const e=document.getElementById('clk');if(e)e.textContent=new Date().toISOString().slice(11,19)+'Z'},1000);
 const rail=document.getElementById('rail');
-['status','history','uptime','volume','schemas'].forEach((id,i)=>{
+['status','history','uptime','volume','schemas','alerts','incidents','events','repos'].forEach((id,i)=>{
   const d=document.createElement('div');d.className='i'+(i===0?' a':'');
   d.textContent=id;d.onclick=()=>go(id);d.dataset.v=id;rail.appendChild(d);});
 function go(v){document.querySelectorAll('.rail .i').forEach(i=>i.classList.toggle('a',i.dataset.v===v));V=v;render();}
@@ -128,6 +128,66 @@ async function render(){
       h+=`<td>${(s.columns||[]).length}</td><td>${fmt_ts(s.snapshot_at)}</td></tr>`;
     });
     el.innerHTML=h+`</table>`;
+  }
+  if(V==='alerts'){
+    sb.innerHTML='';
+    const d=await G('/api/alerts');
+    if(d.error){el.innerHTML=`<div class="box">${esc(d.error)}</div>`;return;}
+    const a=d.alerts||{};
+    if(!Object.keys(a).length){el.innerHTML=`<div class="box">no alert state (first run)</div>`;return;}
+    let h=`<table><tr><th>source</th><th>status</th><th>updated</th></tr>`;
+    Object.entries(a).sort().forEach(([sid,info])=>{
+      h+=`<tr><td>${esc(sid)}</td><td class="status-${info.status||''}">${esc(info.status||'')}</td>`;
+      h+=`<td>${fmt_ts(info.updated_at)}</td></tr>`;
+    });
+    el.innerHTML=h+`</table>`;
+  }
+  if(V==='incidents'){
+    sb.innerHTML='';
+    const d=await G('/api/incidents?status=all');
+    if(d.error){el.innerHTML=`<div class="box">${esc(d.error)}</div>`;return;}
+    const inc=d.incidents||[];
+    if(!inc.length){el.innerHTML=`<div class="box">no incidents</div>`;return;}
+    let h=`<table><tr><th>id</th><th>source</th><th>garden</th><th>severity</th><th>status</th><th>opened</th></tr>`;
+    inc.forEach(i=>{
+      h+=`<tr><td class="dim">${esc(i.incident_id)}</td><td>${esc(i.source_id)}</td>`;
+      h+=`<td class="dim">${esc(i.garden)}</td><td>${esc(i.severity)}</td>`;
+      h+=`<td>${esc(i.status)}</td><td>${fmt_ts(i.opened_at)}</td></tr>`;
+    });
+    el.innerHTML=h+`</table>`;
+  }
+  if(V==='events'){
+    sb.innerHTML='';
+    const d=await G('/api/events?days=1');
+    if(d.error){el.innerHTML=`<div class="box">${esc(d.error)}</div>`;return;}
+    const ev=d.events||[];
+    if(!ev.length){el.innerHTML=`<div class="box">no events in last 24h</div>`;return;}
+    let h=`<table><tr><th>time</th><th>type</th><th>source</th><th>garden</th><th>severity</th></tr>`;
+    ev.slice(0,100).forEach(e=>{
+      h+=`<tr><td>${fmt_ts(e.at)}</td><td>${esc(e.type)}</td>`;
+      h+=`<td>${esc(e.source_id||'')}</td><td class="dim">${esc(e.garden)}</td>`;
+      h+=`<td>${esc(e.severity||'')}</td></tr>`;
+    });
+    el.innerHTML=h+`</table>`;
+  }
+  if(V==='repos'){
+    sb.innerHTML='';
+    const d=await G('/api/repos');
+    if(d.error){el.innerHTML=`<div class="box">${esc(d.error)}</div>`;return;}
+    const repos=d.repos||{};
+    const ci_colors={success:'status-ok',failure:'status-error',pending:'status-stale',none:'status-unknown',unknown:'status-unknown'};
+    let h=`<table><tr><th>repo</th><th>commit</th><th>message</th><th>ci</th><th>date</th></tr>`;
+    Object.entries(repos).sort().forEach(([name,info])=>{
+      const c=info.last_commit||{};
+      const sha=(c.sha||'').slice(0,8);
+      const msg=(c.message||'').slice(0,38);
+      const date=(c.date||'').slice(0,10);
+      const ci=info.ci_status||'unknown';
+      h+=`<tr><td>${esc(name)}</td><td class="hash">${esc(sha)}</td>`;
+      h+=`<td>${esc(msg)}</td><td class="${ci_colors[ci]||''}">${esc(ci)}</td>`;
+      h+=`<td class="dim">${esc(date)}</td></tr>`;
+    });
+    el.innerHTML=h+`</table><div class="box">github status — requires authenticated gh CLI</div>`;
   }
 }
 G('/api/health').then(h=>document.getElementById('health').textContent=h.ok?'live':'down').catch(()=>document.getElementById('health').textContent='down');

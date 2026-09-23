@@ -9,17 +9,38 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
+from .config import STATE_DIR
+
+
+def _load_garden_paths() -> List[Path]:
+    """Load garden paths from sources.yaml."""
+    try:
+        import yaml
+        sources_yaml = Path(__file__).parent / "sources.yaml"
+        with open(sources_yaml) as f:
+            manifest = yaml.safe_load(f)
+        gardens = manifest.get("gardens", {})
+        paths = []
+        for gid, gcfg in gardens.items():
+            if gcfg.get("status") != "not_installed":
+                p = Path(gcfg.get("path", ""))
+                if p:
+                    paths.append(p)
+        return paths
+    except Exception:
+        # Fallback to known paths
+        return [
+            Path("/home/ubuntu/powpowpow"),
+            Path("/home/ubuntu/repair"),
+            Path("/home/ubuntu/powuk"),
+            Path("/home/ubuntu/powstock"),
+        ]
+
 
 def find_r2_sync_scripts() -> List[Path]:
     """Find r2_sync.sh scripts in all gardens."""
     scripts = []
-    gardens = [
-        Path("/home/ubuntu/powpowpow"),
-        Path("/home/ubuntu/repair"),
-        Path("/home/ubuntu/powuk"),
-        Path("/home/ubuntu/powstock"),
-    ]
-    for g in gardens:
+    for g in _load_garden_paths():
         script = g / "r2_sync.sh"
         if script.exists():
             scripts.append(script)
@@ -47,21 +68,43 @@ def run_backup(garden: Optional[str] = None, dry_run: bool = False) -> dict:
             result = subprocess.run(
                 cmd, capture_output=True, text=True, timeout=300,
             )
+            status = "ok" if result.returncode == 0 else "error"
             results[garden_name] = {
-                "status": "ok" if result.returncode == 0 else "error",
+                "status": status,
                 "output": result.stdout[-500:] if result.stdout else "",
                 "error": result.stderr[-500:] if result.stderr else "",
             }
+            from .events import record_event
+            record_event(
+                event_type="backup_verified" if status == "ok" else "backup_failed",
+                garden=garden_name,
+                severity="info" if status == "ok" else "warning",
+                details={"output": result.stdout[-200:] if result.stdout else ""},
+            )
         except subprocess.TimeoutExpired:
             results[garden_name] = {
                 "status": "timeout",
                 "error": "Sync timed out after 300s",
             }
+            from .events import record_event
+            record_event(
+                event_type="backup_failed",
+                garden=garden_name,
+                severity="warning",
+                details={"error": "timeout"},
+            )
         except Exception as e:
             results[garden_name] = {
                 "status": "error",
                 "error": str(e),
             }
+            from .events import record_event
+            record_event(
+                event_type="backup_failed",
+                garden=garden_name,
+                severity="warning",
+                details={"error": str(e)},
+            )
 
     return results
 

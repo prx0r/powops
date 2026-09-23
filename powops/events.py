@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import os
 import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -78,7 +78,7 @@ def get_events(
     now = datetime.now(timezone.utc)
 
     for i in range(days):
-        date = (now - __import__('datetime').timedelta(days=i)).strftime("%Y-%m-%d")
+        date = (now - timedelta(days=i)).strftime("%Y-%m-%d")
         path = EVENTS_DIR / f"{date}.jsonl"
         if not path.exists():
             continue
