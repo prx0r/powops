@@ -39,8 +39,8 @@ def create_incident(
     """Create a new incident."""
     _ensure_dir()
     now = datetime.now(timezone.utc).isoformat()
-    date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
-    incident_id = f"inc-{date_str}-{garden}-{source_id}"
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S-%f")
+    incident_id = f"inc-{stamp}-{garden}-{source_id}"
 
     incident = {
         "incident_id": incident_id,
@@ -166,7 +166,7 @@ def get_open_incidents(garden: Optional[str] = None) -> list[dict]:
     return get_incidents(status="open", garden=garden)
 
 
-def find_open_incident(source_id: str) -> Optional[dict]:
-    """Find an open incident for a specific source."""
-    incidents = get_incidents(status="open", source_id=source_id)
+def find_open_incident(source_id: str, garden: Optional[str] = None) -> Optional[dict]:
+    """Find an open incident for a specific source (optionally scoped to a garden)."""
+    incidents = get_incidents(status="open", source_id=source_id, garden=garden)
     return incidents[0] if incidents else None

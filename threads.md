@@ -48,6 +48,25 @@ Everything that's unfinished, broken, blocked or waiting on something.
 **Fix:** append a sequence or time component to incident IDs + migrate existing files. Needs the P4 incident work.
 **Priority:** medium — single-outage tracking works correctly today.
 
+## Thread 27: blocked items needing human input
+**Status:** documented 2026-09-23. None of these can be fixed by an agent.
+
+1. **Webhook URLs (alerts notify nobody).** State machine verified working,
+   but `alerting.default_webhook` is null and 0 sources have URLs. Needs a
+   real destination (Slack/Discord webhook, ntfy topic, etc.). Until then
+   the alerts tab shows state with no notifications.
+2. **API keys (5 powrobots sources).** companies_house, mouser, farnell,
+   lcsc, ebay_uk. Sign up + set env vars. CH key pattern already proven
+   in powuk/.env.
+3. **ONS dataset URLs (ons_skills, ons_salaries 404; find_tender 400).**
+   Upstream reorganized. Needs a human to find current URLs on ons.gov.uk.
+   Low ROI — 9 other powuk collectors already cover grid/planning/labour.
+4. **Cloudflare Access for dashboard.** Bearer auth added, but the tunnel
+   origin is still directly reachable. Put Access in front (roadmap 10.1).
+5. **ebay_uk ID collision (repair vs powrobots).** Incident lookup is now
+   garden-scoped, but history/volume/uptime still key by bare source_id.
+   Full fix needs namespaced IDs + history migration (roadmap 4.2).
+
 ## Thread 1: powuk broken collectors
 
 **Status:** 4 collectors failing

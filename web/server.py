@@ -77,11 +77,18 @@ class Handler(BaseHTTPRequestHandler):
     server_version = "powops-dash/0.1"
 
     def _gate(self) -> bool:
-        q = parse_qs(urlparse(self.path).query)
-        if q.get("token", [""])[0] != TOKEN:
-            self._json({"error": "bad token"}, 401)
-            return False
-        return True
+        # Preferred: Authorization: Bearer <token> (doesn't leak into logs).
+        # Legacy: ?token= query param (dashboard SPA links).
+        auth = self.headers.get("Authorization", "")
+        if auth.startswith("Bearer "):
+            if secrets.compare_digest(auth[7:], TOKEN):
+                return True
+        else:
+            q = parse_qs(urlparse(self.path).query)
+            if secrets.compare_digest(q.get("token", [""])[0], TOKEN):
+                return True
+        self._json({"error": "bad token"}, 401)
+        return False
 
     def _headers(self):
         """Security headers for all responses."""
@@ -89,12 +96,26 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")
-        self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'")
+        self.send_header("Content-Security-Policy", "default-src 'self'; style-src 'self'; script-src 'self'")
 
     def _json(self, obj, code: int = 200):
         data = json.dumps(obj, default=str).encode()
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(data)))
+        self._headers()
+        self.end_headers()
+        self.wfile.write(data)
+
+    def _static(self, path: str):
+        kinds = {".css": "text/css", ".js": "application/javascript"}
+        ext = os.path.splitext(path)[1]
+        if ext not in kinds or "/" in path or path.startswith("."):
+            return self._json({"error": "not found"}, 404)
+        with open(os.path.join(STATIC, path), "rb") as f:
+            data = f.read()
+        self.send_response(200)
+        self.send_header("Content-Type", kinds[ext])
         self.send_header("Content-Length", str(len(data)))
         self._headers()
         self.end_headers()
@@ -111,9 +132,15 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_GET(self):
+        u = urlparse(self.path)
+
+        # Static assets carry no data — serve without auth so the SPA
+        # can load them (browser <link>/<script> requests send no token).
+        if u.path in ("/style.css", "/app.js"):
+            return self._static(u.path.lstrip("/"))
+
         if not self._gate():
             return
-        u = urlparse(self.path)
         q = parse_qs(u.query)
         arg = lambda k, d="": q.get(k, [d])[0]
 

@@ -248,6 +248,76 @@ sources:
       source_id: france_repairability
       max_staleness: 48h
 
+  # --- repair daemon collectors (repair/daemon.py SOURCES) ---
+  # These IDs match collector_run.source_id in repair.db. The legacy
+  # sources above predate the daemon; reconciliation is roadmap P2.
+
+  - id: repair_cex
+    garden: repair
+    authority: CeX
+    type: scrape
+    description: CeX secondhand electronics listings (repair daemon)
+    cadence: 6h
+    health:
+      check: collector_db
+      source_id: cex
+      max_staleness: 24h
+
+  - id: repair_robotshop
+    garden: repair
+    authority: RobotShop
+    type: scrape
+    description: RobotShop UK robotics parts (repair daemon)
+    cadence: 12h
+    health:
+      check: collector_db
+      source_id: robotshop_uk
+      max_staleness: 48h
+
+  - id: repair_trade_pricing
+    garden: repair
+    authority: Multiple
+    type: scrape
+    description: Trade pricing aggregation (repair daemon)
+    cadence: 12h
+    health:
+      check: collector_db
+      source_id: trade_pricing
+      max_staleness: 48h
+
+  - id: repair_ebay_3market
+    garden: repair
+    authority: eBay
+    type: api
+    description: eBay 3-market listings (repair daemon)
+    cadence: 6h
+    health:
+      check: collector_db
+      source_id: ebay_3market
+      max_staleness: 24h
+
+  - id: repair_partsdb
+    garden: repair
+    authority: PartsDB
+    type: api
+    description: Parts database (repair daemon)
+    cadence: 24h
+    health:
+      check: collector_db
+      source_id: partsdb
+      max_staleness: 72h
+
+  - id: repair_opss_recalls
+    garden: repair
+    authority: OPSS
+    type: api
+    description: Product safety recalls (repair daemon)
+    cadence: 24h
+    health:
+      check: collector_db
+      source_id: opss_recalls
+      max_staleness: 72h
+
   # ═══════════════════════════════════════════════════════════
   # POWUK — UK physical capacity / labour / infrastructure
   # 24 sources — all emit pow-health/1 artifacts

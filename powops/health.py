@@ -26,17 +26,18 @@ def load_manifest(path: Optional[Path] = None) -> dict:
         return yaml.safe_load(f)
 
 
-def check_source(source: dict, readers: dict) -> SourceStatus:
+def check_source(source: dict, readers: dict, gardens: dict | None = None) -> SourceStatus:
     """Check a single source against its garden reader."""
     garden_id = source.get("garden", "")
     health = source.get("health", {})
     check_type = health.get("check", "unknown")
     now = datetime.now(timezone.utc)
+    gardens = gardens or {}
 
     reader = readers.get(garden_id)
 
     # Garden not installed
-    garden_cfg = readers.get("_config", {}).get("gardens", {}).get(garden_id, {})
+    garden_cfg = gardens.get(garden_id, {})
     if garden_cfg.get("status") == "not_installed":
         return SourceStatus(
             source_id=source["id"],
@@ -127,7 +128,6 @@ def check_all(path: Optional[Path] = None) -> List[SourceStatus]:
     for gid, gcfg in gardens.items():
         if gcfg.get("status") != "not_installed":
             readers[gid] = GardenReader(gid, gcfg)
-    readers["_config"] = manifest
 
     # NOTE: no event recording here. check_all is a read path used by the
     # dashboard, MCP and CLI — it must not write. Events are recorded in
@@ -137,7 +137,7 @@ def check_all(path: Optional[Path] = None) -> List[SourceStatus]:
 
     results = []
     for source in sources:
-        results.append(check_source(source, readers))
+        results.append(check_source(source, readers, gardens))
 
     return results
 
@@ -241,7 +241,7 @@ def check_all_full(
 
             # Problem emerged: open incident
             if old_status == "ok" and new_status in ("stale", "error", "blocked", "no_key"):
-                if find_open_incident(r.source_id):
+                if find_open_incident(r.source_id, r.garden):
                     continue
                 severity = "critical" if new_status == "error" else "warning"
                 incident = create_incident(
@@ -262,7 +262,7 @@ def check_all_full(
 
             # Problem deepened: update incident
             elif old_status in ("stale", "no_key") and new_status == "error":
-                existing = find_open_incident(r.source_id)
+                existing = find_open_incident(r.source_id, r.garden)
                 if existing:
                     update_incident(
                         existing["incident_id"],
@@ -280,7 +280,7 @@ def check_all_full(
 
             # Recovered: resolve incident
             elif old_status in ("stale", "error", "blocked", "no_key") and new_status == "ok":
-                existing = find_open_incident(r.source_id)
+                existing = find_open_incident(r.source_id, r.garden)
                 if existing:
                     resolve_incident(existing["incident_id"])
                     record_event(

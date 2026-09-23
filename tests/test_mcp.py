@@ -91,11 +91,11 @@ async def _run_mcp_test():
 
 def test_mcp_initialize_and_list_tools():
     """Test MCP server initializes and lists tools."""
-    result = asyncio.get_event_loop().run_until_complete(_run_mcp_test())
+    result = asyncio.run(_run_mcp_test())
     assert result, "MCP integration test failed"
 
 
 if __name__ == "__main__":
-    result = asyncio.get_event_loop().run_until_complete(_run_mcp_test())
+    result = asyncio.run(_run_mcp_test())
     print("PASS" if result else "FAIL")
     sys.exit(0 if result else 1)

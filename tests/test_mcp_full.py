@@ -123,7 +123,7 @@ async def _stdio_call_all():
 
 def test_mcp_all_tools():
     """Every advertised tool responds with the expected shape."""
-    passed, failed = asyncio.get_event_loop().run_until_complete(_stdio_call_all())
+    passed, failed = asyncio.run(_stdio_call_all())
     print(f"\npassed ({len(passed)}): {passed}")
     print(f"failed ({len(failed)}): {failed}")
     assert not failed, f"MCP tool failures: {failed}"
@@ -131,7 +131,7 @@ def test_mcp_all_tools():
 
 
 if __name__ == "__main__":
-    passed, failed = asyncio.get_event_loop().run_until_complete(_stdio_call_all())
+    passed, failed = asyncio.run(_stdio_call_all())
     print(f"passed ({len(passed)}): {passed}")
     print(f"failed ({len(failed)}): {failed}")
     sys.exit(0 if not failed else 1)

@@ -48,7 +48,6 @@ class SourceStatus:
     last_success: Optional[datetime] = None  # when we last got valid data
     age: Optional[timedelta] = None
     records: Optional[int] = None
-    bytes_new: Optional[int] = None
     error: Optional[str] = None
     check_hash: Optional[str] = None  # HMAC of (source_id + status + checked_at) — proves server checked
     evidence_level: str = "weak"  # weak (mtime/pid), strong (heartbeat/collector_db with data)
@@ -69,20 +68,9 @@ class SourceStatus:
             "records": self.records,
             "error": self.error,
             "check_hash": self.check_hash,
+            "evidence_level": self.evidence_level,
         }
         return d
-
-    @property
-    def status_icon(self) -> str:
-        return {
-            "ok": "ok",
-            "stale": "stale",
-            "blocked": "blocked",
-            "no_key": "no_key",
-            "not_installed": "not_installed",
-            "error": "error",
-            "unknown": "unknown",
-        }.get(self.status, "?")
 
 
 def _parse_duration(s: str) -> timedelta:
