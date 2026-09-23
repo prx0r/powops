@@ -1,7 +1,27 @@
 # POW Development Map
 
-**Current state:** 27/82 sources OK across 7 gardens. MCP live. Dashboard live.
+**Current state:** 31/42 installed sources OK across 7 gardens (82 configured). MCP live. Dashboard live.
 **Date:** 2026-09-23
+
+---
+
+## Garden MCP landscape (2026-09-23)
+
+Each garden is growing its own interface. powops is the integrated monitoring layer.
+
+| Garden | Own MCP? | Own API? | Tools | Pi agent access |
+|--------|----------|----------|-------|-----------------|
+| powops | yes (16 tools) | yes (dashboard) | status, history, uptime, incidents, events, coverage, schemas, verify, sources, alerts, volume, timeline, repos | enabled in opencode.jsonc |
+| powstock | yes (10 tools) | yes (FastAPI) | health, universe, prices, insiders, short_interest, rns, companies, signals, runs, collectors, summary | exists, not yet enabled |
+| powpowpow | yes (6 tools) | yes (site/server.py) | asset_state, signals, factors, compute_routes, miner_pressure, brief | exists, not yet enabled |
+| powphysical | yes (6 tools) | no | search, resolve, compare, save_build, get_build, reprice | fixture data only — do not enable yet |
+| powuk | no (spec only) | no (collector runner) | — | via powops only |
+| repair | no | no | — | via powops only |
+| powproducts | no | no | — | via powops only |
+| powrobots | no | no | — | via powops only |
+| powk | no | no | — | via powops only |
+
+**Rule:** pi agent talks to gardens through powops for health/monitoring. Direct garden MCPs are for domain data (prices, signals, builds) once enabled. Do not enable powphysical's MCP until adapters return real data.
 
 ---
 
@@ -219,16 +239,16 @@
 | Tab | Data source | Has data? | Wired? |
 |-----|-------------|-----------|--------|
 | status | /api/status | YES (82 sources) | YES |
-| history | /api/history | YES (165 entries) | YES |
+| history | /api/history | YES (165+ entries) | YES |
 | uptime | /api/uptime | YES (65 sources) | YES |
 | volume | /api/volume | YES (17 sources) | YES |
-| schemas | /api/schemas | NO (0 schemas) | YES but empty |
-| alerts | /api/alerts | NO (0 alerts) | YES but empty |
-| incidents | /api/incidents | NO (0 incidents) | YES but empty |
-| events | /api/events | NO (0 events) | YES but empty |
-| repos | /api/repos | NO (needs gh CLI) | YES but blocked |
+| schemas | /api/schemas | NO (0 schemas) | YES but empty — no sources emit schema info |
+| alerts | /api/alerts | NO (0 alerts) | YES but empty — no webhook URLs configured |
+| incidents | /api/incidents | fills on `powops full` | YES — run full to populate |
+| events | /api/events | YES (flows on status change) | YES — wired into check_all() 2026-09-23 |
+| repos | /api/repos | needs gh CLI auth | YES but blocked on auth |
 
-**Dashboard is fully wired.** All 9 tabs connect to real API endpoints. The gaps are in data, not code.
+**Dashboard is fully wired.** All 9 tabs connect to real API endpoints. The gaps are in data, not code. powstock visibility fixed 2026-09-23 (switched to pow_health check type + source_id mapping + dispatch fix).
 
 ---
 

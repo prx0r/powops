@@ -2,7 +2,32 @@
 
 Everything that's unfinished, broken, blocked or waiting on something.
 
+## Resolved 2026-09-23
+- powstock→powops visibility (switched to pow_health + source_id mapping + dispatch fix; 4-5/18 visible)
+- events into check_all() (events tab now fills on status change)
+- powops MCP enabled for pi agent (16 tools, in opencode.jsonc)
+- tokens removed from repair/powrobots git remotes
+- powproducts/powphysical remotes switched SSH→HTTPS (both public, pulls work now)
+
 ---
+
+## Thread 21: powpowpow pull blocked by local changes
+**Status:** upstream has 2 new commits (peer-review hardening, hot trim) + large diff touching backtest.py and chains/network_state.json — the same files with local uncommitted modifications.
+**Impact:** local agent work would conflict on pull.
+**Fix:** commit or stash local backtest.py/network_state.json changes first, then pull origin/master. Do not force-pull blindly while collectors run.
+**Priority:** medium — collectors running fine, merge when local work is saved.
+
+## Thread 22: powstock ingest_run empty
+**Status:** collectors write to data tables (24 prices, 891 RNS, 422 short) but ingest_run has 0 rows, so collector_run view is empty.
+**Impact:** powops reads powstock via pow_health artifacts (works), but run-level audit trail is missing.
+**Fix:** powstock-side bug — run_all() must INSERT into ingest_run per collector. Owner: powstock repo.
+**Priority:** medium — monitoring works via heartbeat, audit trail is nice-to-have.
+
+## Thread 23: garden MCP enablement decision
+**Status:** powstock (10 tools), powpowpow (6 tools) have working MCPs not yet in opencode.jsonc. powphysical MCP returns fixture data.
+**Impact:** pi agent can only reach gardens through powops today.
+**Fix:** enable powstock + powpowpow MCPs in opencode.jsonc when ready. Keep powphysical disabled until adapters return real data. powuk/repair/powproducts/powrobots/powk have no MCP — no action.
+**Priority:** low — powops covers monitoring; garden MCPs are domain-data access.
 
 ## Thread 1: powuk broken collectors
 
