@@ -29,6 +29,12 @@ Everything that's unfinished, broken, blocked or waiting on something.
 **Fix:** enable powstock + powpowpow MCPs in opencode.jsonc when ready. Keep powphysical disabled until adapters return real data. powuk/repair/powproducts/powrobots/powk have no MCP — no action.
 **Priority:** low — powops covers monitoring; garden MCPs are domain-data access.
 
+## Thread 24: repair manifest drift
+**Status:** powops monitors 7 legacy repair sources (open_repair, ebay_uk, dvla, land_registry, planning_data, eprel, france_repairability). Repair's daemon runs 7 different collectors (cex, open_repair, robotshop_uk, trade_pricing, ebay_3market, partsdb, opss_recalls). Only open_repair overlaps.
+**Impact:** 6/7 repair sources in powops can never go green — the collectors don't exist under those IDs.
+**Fix:** roadmap P2 reconciliation — repair owns its manifest, powops discovers it. Do not hand-edit powops sources.yaml to chase renames; use the migration command with alias mapping when built.
+**Priority:** medium — open_repair (the overlapping source) works with 13K records.
+
 ## Thread 1: powuk broken collectors
 
 **Status:** 4 collectors failing
