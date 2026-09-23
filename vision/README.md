@@ -2,10 +2,15 @@
 
 POWOps is the global northstar for all POW repositories. These documents define the commercial strategy, technical roadmap, and operational direction.
 
+## Start here
+
+**`devplan.md`** — the high-level development plan. Every repo references this.
+
 ## Documents
 
 | File | Purpose |
 |------|---------|
+| **`devplan.md`** | **START HERE** — high-level dev plan, checkpoints, repo assignments |
 | `powvision.md` | Core thesis — robotics procurement and compatibility intelligence layer |
 | `roadmap.md` | Mission control development instructions — 8 phases from baseline to production |
 | `commercial.md` | 20 commercial products from existing repositories |
