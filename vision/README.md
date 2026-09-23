@@ -11,6 +11,8 @@ POWOps is the global northstar for all POW repositories. These documents define 
 | `commercial.md` | 20 commercial products from existing repositories |
 | `nextsteps.md` | Robot maintenance, repair and parts intelligence as central focus |
 | `ministar.md` | Immediate priorities — visibility, verification, mission control |
+| `shopifygoat.md` | E-commerce alpha dossier — Shopify intelligence × POW data-garden thesis |
+| `robotprintify.md` | Consumer physical agents — ESP32-based product platform from POW data |
 
 ## The POW Thesis
 
