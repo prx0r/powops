@@ -93,6 +93,8 @@ def check_source(source: dict, readers: dict) -> SourceStatus:
         status = reader.read_raw_mtime(health)
     elif check_type == "pid_file":
         status = reader.read_pid_file(health)
+    elif check_type == "pow_health":
+        status = reader.read_pow_health(source["id"], health)
     else:
         return SourceStatus(
             source_id=source["id"],

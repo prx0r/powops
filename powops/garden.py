@@ -411,3 +411,85 @@ class GardenReader:
                 evidence_level="weak",
                 details={"pid": pid},
             )
+
+    def read_pow_health(self, source_id: str, health_config: dict) -> SourceStatus:
+        """Read a pow-health/1 JSON artifact emitted by a garden collector.
+
+        The artifact is at <garden_path>/data/health/{source_id}.json
+        This is the preferred health check — strong evidence, structured data.
+        """
+        health_dir = self.path / health_config.get("directory", "data/health")
+        artifact_path = health_dir / f"{source_id}.json"
+        max_staleness = _parse_duration(health_config.get("max_staleness", "48h"))
+
+        if not artifact_path.exists():
+            return SourceStatus(
+                source_id=source_id, garden=self.garden_id,
+                authority="", description="",
+                status="unknown",
+                error=f"No health artifact: {artifact_path}",
+            )
+
+        try:
+            with open(artifact_path) as f:
+                data = json.load(f)
+        except (json.JSONDecodeError, OSError) as e:
+            return SourceStatus(
+                source_id=source_id, garden=self.garden_id,
+                authority="", description="",
+                status="error",
+                error=f"Failed to read health artifact: {e}",
+            )
+
+        # Validate protocol
+        if data.get("protocol") != "pow-health/1":
+            return SourceStatus(
+                source_id=source_id, garden=self.garden_id,
+                authority="", description="",
+                status="error",
+                error=f"Unknown protocol: {data.get('protocol')}",
+            )
+
+        last_attempt = _parse_ts(data.get("last_attempt"))
+        last_success = _parse_ts(data.get("last_success"))
+        attempt_status = data.get("attempt_status", "error")
+        error = data.get("error")
+
+        # Determine health from attempt_status + staleness
+        age = _age_since(last_success)
+        is_stale = age is not None and age > max_staleness
+
+        if attempt_status == "blocked":
+            resolved = "blocked"
+        elif attempt_status == "error" or error:
+            resolved = "error"
+        elif is_stale:
+            resolved = "stale"
+        else:
+            resolved = "ok"
+
+        # Extract stats from artifact
+        records = data.get("records_seen")
+        records_new = data.get("records_new")
+        coverage_ratio = data.get("coverage_ratio")
+        expected_count = data.get("expected_count")
+
+        details = {}
+        for k in ("records_new", "bytes_new", "schema_hash", "collector_version",
+                   "raw_artifact_count", "coverage_ratio", "expected_count", "source_timestamp"):
+            if k in data and data[k] is not None:
+                details[k] = data[k]
+
+        return SourceStatus(
+            source_id=source_id, garden=self.garden_id,
+            authority=data.get("authority", ""),
+            description="",
+            status=resolved,
+            last_attempt=last_attempt,
+            last_success=last_success if not is_stale else None,
+            age=age,
+            records=records,
+            error=error,
+            evidence_level="strong",
+            details=details,
+        )

@@ -34,9 +34,9 @@ gardens:
     storage: warehouse/
 
   powuk:
-    path: /home/ubuntu/powuk
+    path: /root/powuk
     description: UK physical capacity / labour / infrastructure / policy
-    health_check: raw_mtime
+    health_check: pow_health
     storage: data/raw/
 
   powstock:
@@ -250,95 +250,294 @@ sources:
 
   # ═══════════════════════════════════════════════════════════
   # POWUK — UK physical capacity / labour / infrastructure
+  # 24 sources — all emit pow-health/1 artifacts
   # ═══════════════════════════════════════════════════════════
+
+  # --- GRID / POWER ---
 
   - id: neso_demand
     garden: powuk
     authority: National Grid ESO
     type: api
-    description: UK electricity demand (hourly)
+    description: UK half-hourly electricity demand
     cadence: hourly
     health:
-      check: raw_mtime
-      directory: data/raw/neso_demand
+      check: pow_health
+      directory: data/health
       max_staleness: 48h
 
   - id: neso_generation
     garden: powuk
     authority: National Grid ESO
     type: api
-    description: UK generation mix — wind/solar/gas (hourly)
+    description: UK generation mix — wind/solar/gas/carbon
     cadence: hourly
     health:
-      check: raw_mtime
-      directory: data/raw/neso_generation
+      check: pow_health
+      directory: data/health
       max_staleness: 48h
 
   - id: pvlive
     garden: powuk
     authority: Sheffield Solar / PV Live
     type: api
-    description: Actual UK solar output (hourly)
+    description: Actual UK solar generation output
     cadence: hourly
     health:
-      check: raw_mtime
-      directory: data/raw/pvlive
+      check: pow_health
+      directory: data/health
       max_staleness: 48h
 
-  - id: planning_apps
+  - id: neso_tec
     garden: powuk
-    authority: Planning Data
+    authority: National Energy System Operator
     type: api
-    description: UK planning applications (2h)
-    cadence: 2h
+    description: Forward contracted transmission connection capacity
+    cadence: daily
     health:
-      check: raw_mtime
-      directory: data/raw/planning_apps
+      check: pow_health
+      directory: data/health
+      max_staleness: 168h
+
+  - id: ukpn_flex
+    garden: powuk
+    authority: UK Power Networks
+    type: api
+    description: DNO flexibility catalogue metadata
+    cadence: 12h
+    health:
+      check: pow_health
+      directory: data/health
       max_staleness: 48h
+
+  # --- LABOUR / WORKFORCE ---
 
   - id: ons_labour
     garden: powuk
     authority: Office for National Statistics
-    type: csv
-    description: UK labour market data (175K rows)
+    type: xlsx
+    description: UK labour demand by SOC x region (175K rows)
     cadence: daily
     health:
-      check: raw_mtime
-      directory: data/raw/ons_labour
+      check: pow_health
+      directory: data/health
       max_staleness: 168h
+
+  - id: ons_skills
+    garden: powuk
+    authority: Office for National Statistics
+    type: xlsx
+    description: Skills from online job adverts (4,282)
+    cadence: daily
+    health:
+      check: pow_health
+      directory: data/health
+      max_staleness: 168h
+
+  - id: ons_salaries
+    garden: powuk
+    authority: Office for National Statistics
+    type: xlsx
+    description: Salaries from online job adverts (50,973)
+    cadence: daily
+    health:
+      check: pow_health
+      directory: data/health
+      max_staleness: 168h
+
+  - id: ashe_wages
+    garden: powuk
+    authority: Office for National Statistics
+    type: xlsx
+    description: Wage data by region x SOC (3,906 records)
+    cadence: daily
+    health:
+      check: pow_health
+      directory: data/health
+      max_staleness: 168h
+
+  - id: nomis_supply
+    garden: powuk
+    authority: Nomis / ONS
+    type: api
+    description: Employment by SOC x geography — supply side
+    cadence: daily
+    status: blocked
+    health:
+      check: pow_health
+      directory: data/health
+      max_staleness: 168h
+
+  # --- TRAINING ---
 
   - id: apar
     garden: powuk
     authority: Education and Skills Funding Agency
     type: api
-    description: UK training providers (1,432)
+    description: UK apprenticeship providers (1,432)
     cadence: daily
     health:
-      check: raw_mtime
-      directory: data/raw/apar
+      check: pow_health
+      directory: data/health
       max_staleness: 168h
 
   - id: ofqual
     garden: powuk
     authority: Ofqual
     type: api
-    description: UK qualifications register (10,000)
+    description: UK regulated qualifications (52K+)
     cadence: daily
     health:
-      check: raw_mtime
-      directory: data/raw/ofqual
+      check: pow_health
+      directory: data/health
       max_staleness: 168h
+
+  - id: dfe_apprenticeships
+    garden: powuk
+    authority: Department for Education
+    type: csv
+    description: Apprenticeship starts, achievements, completion rates
+    cadence: daily
+    status: blocked
+    health:
+      check: pow_health
+      directory: data/health
+      max_staleness: 168h
+
+  # --- BUSINESS CAPACITY ---
+
+  - id: ch_capacity
+    garden: powuk
+    authority: Companies House
+    type: api
+    description: Active firms by SIC cluster
+    cadence: 12h
+    health:
+      check: pow_health
+      directory: data/health
+      max_staleness: 48h
+
+  # --- CERTIFIED CAPACITY ---
+
+  - id: refcom
+    garden: powuk
+    authority: REFCOM
+    type: api
+    description: F-gas certified companies (11,295)
+    cadence: daily
+    health:
+      check: pow_health
+      directory: data/health
+      max_staleness: 168h
+
+  - id: open_repair
+    garden: powuk
+    authority: Open Repair Alliance
+    type: csv
+    description: Community repair event data
+    cadence: daily
+    status: inactive
+    health:
+      check: pow_health
+      directory: data/health
+      max_staleness: 168h
+
+  # --- PHYSICAL DEMAND ---
+
+  - id: planning_apps
+    garden: powuk
+    authority: Planning Data
+    type: api
+    description: UK planning applications
+    cadence: 2h
+    health:
+      check: pow_health
+      directory: data/health
+      max_staleness: 48h
 
   - id: contracts_finder
     garden: powuk
     authority: Contracts Finder
     type: api
-    description: UK public procurement (2h)
+    description: UK public procurement (OCDS)
     cadence: 2h
     health:
-      check: raw_mtime
-      directory: data/raw/contracts_finder
+      check: pow_health
+      directory: data/health
       max_staleness: 48h
+
+  - id: find_tender
+    garden: powuk
+    authority: Find a Tender
+    type: api
+    description: Higher-value UK procurement (OCDS)
+    cadence: 2h
+    health:
+      check: pow_health
+      directory: data/health
+      max_staleness: 48h
+
+  - id: epc_stock
+    garden: powuk
+    authority: Ministry of Housing / DCLG
+    type: csv
+    description: Energy performance certificates / building stock
+    cadence: daily
+    health:
+      check: pow_health
+      directory: data/health
+      max_staleness: 168h
+
+  # --- POLICY ---
+
+  - id: legislation
+    garden: powuk
+    authority: UK Legislation
+    type: xml
+    description: Acts, Statutory Instruments, Bills from legislation.gov.uk
+    cadence: daily
+    status: inactive
+    health:
+      check: pow_health
+      directory: data/health
+      max_staleness: 168h
+
+  - id: gov_publications
+    garden: powuk
+    authority: GOV.UK
+    type: api
+    description: Government news, press releases, statements
+    cadence: daily
+    health:
+      check: pow_health
+      directory: data/health
+      max_staleness: 168h
+
+  - id: gov_grants
+    garden: powuk
+    authority: GOV.UK
+    type: api
+    description: Active grant and funding notices
+    cadence: daily
+    status: inactive
+    health:
+      check: pow_health
+      directory: data/health
+      max_staleness: 168h
+
+  # --- LEGACY ---
+
+  - id: evspark_trades
+    garden: powuk
+    authority: EvSpark / Local
+    type: csv
+    description: Electrical businesses by postcode (deprecated)
+    cadence: daily
+    status: legacy
+    health:
+      check: pow_health
+      directory: data/health
+      max_staleness: 168h
 
   # ═══════════════════════════════════════════════════════════
   # POWSTOCK — UK capital markets / corporate / ownership
