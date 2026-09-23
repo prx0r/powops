@@ -129,35 +129,15 @@ def check_all(path: Optional[Path] = None) -> List[SourceStatus]:
             readers[gid] = GardenReader(gid, gcfg)
     readers["_config"] = manifest
 
-    # Load previous alert state for event recording
-    from .alerts import _load_alert_state
-    prev_state = _load_alert_state()
+    # NOTE: no event recording here. check_all is a read path used by the
+    # dashboard, MCP and CLI — it must not write. Events are recorded in
+    # check_all_full, which owns the alert-state lifecycle. Recording here
+    # caused duplicate transition events on every read (state never advances
+    # on this path).
 
     results = []
     for source in sources:
-        result = check_source(source, readers)
-        results.append(result)
-
-        # Record events for status changes
-        if result.source_id and result.source_id in prev_state:
-            old_status = prev_state[result.source_id].get("status", "ok")
-            new_status = result.status
-            if old_status != new_status and new_status not in ("not_installed",):
-                from .events import record_event
-                if new_status in ("stale", "error", "blocked", "no_key"):
-                    record_event(
-                        event_type=f"source_{new_status}",
-                        garden=result.garden,
-                        source_id=result.source_id,
-                        severity="critical" if new_status == "error" else "warning",
-                    )
-                elif old_status in ("stale", "error", "blocked", "no_key", "unknown") and new_status == "ok":
-                    record_event(
-                        event_type="source_recovered",
-                        garden=result.garden,
-                        source_id=result.source_id,
-                        severity="info",
-                    )
+        results.append(check_source(source, readers))
 
     return results
 
@@ -212,32 +192,38 @@ def check_all_full(
         alert_actions = process_alerts(results, alert_configs, dry_run=dry_run)
         actions["alerts_fired"] = alert_actions
 
-        # Record events for status changes
+        # Record events for status changes (live runs only — dry runs
+        # must not write to the event stream).
         from .events import record_event
-        for a in alert_actions:
-            sid = a.get("source_id", "")
-            action = a.get("action", "")
-            new_status = a.get("new_status", "")
-            # Find the matching result for garden info
-            match = [r for r in results if r.source_id == sid]
-            garden = match[0].garden if match else ""
-            if action == "alert":
-                record_event(
-                    event_type=f"source_{new_status}",
-                    garden=garden,
-                    source_id=sid,
-                    severity="critical" if new_status == "error" else "warning",
-                    details={"webhook": a.get("webhook", {})},
-                )
-            elif action == "recovery":
-                record_event(
-                    event_type="source_recovered",
-                    garden=garden,
-                    source_id=sid,
-                    severity="info",
-                )
+        if not dry_run:
+            for a in alert_actions:
+                sid = a.get("source_id", "")
+                action = a.get("action", "")
+                new_status = a.get("new_status", "")
+                # Find the matching result for garden info
+                match = [r for r in results if r.source_id == sid]
+                garden = match[0].garden if match else ""
+                if action == "alert":
+                    record_event(
+                        event_type=f"source_{new_status}",
+                        garden=garden,
+                        source_id=sid,
+                        severity="critical" if new_status == "error" else "warning",
+                        details={"webhook": a.get("webhook", {})},
+                    )
+                elif action == "recovery":
+                    record_event(
+                        event_type="source_recovered",
+                        garden=garden,
+                        source_id=sid,
+                        severity="info",
+                    )
 
-        # Process incidents on state transitions
+        # Process incidents on state transitions.
+        # Idempotency guard: never open when one is already open for the
+        # source (same-day IDs would otherwise overwrite + re-emit events
+        # on every run). Unknown previous state means first sighting —
+        # observe, don't open (matches alert semantics).
         from .incidents import (
             create_incident, update_incident, resolve_incident,
             find_open_incident,
@@ -245,7 +231,9 @@ def check_all_full(
         for r in results:
             if not r.source_id:
                 continue
-            old_status = pre_state.get(r.source_id, {}).get("status", "ok")
+            if dry_run:
+                continue
+            old_status = pre_state.get(r.source_id, {}).get("status", "unknown")
             new_status = r.status
 
             if old_status == new_status:
@@ -253,6 +241,8 @@ def check_all_full(
 
             # Problem emerged: open incident
             if old_status == "ok" and new_status in ("stale", "error", "blocked", "no_key"):
+                if find_open_incident(r.source_id):
+                    continue
                 severity = "critical" if new_status == "error" else "warning"
                 incident = create_incident(
                     source_id=r.source_id,

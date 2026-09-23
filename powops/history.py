@@ -251,7 +251,8 @@ def list_history_files() -> List[dict]:
     _ensure_history_dir()
     files = []
     for p in sorted(HISTORY_DIR.glob("*.jsonl")):
-        lines = sum(1 for _ in open(p))
+        with open(p) as f:
+            lines = sum(1 for _ in f)
         files.append({
             "date": p.stem,
             "path": str(p),

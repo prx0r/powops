@@ -120,7 +120,7 @@ def main():
 
     elif args.command == "full":
         from .health import check_all_full
-        from .status import render_status_table, render_json
+        from .status import render_status_table
         result = check_all_full(dry_run=args.dry_run)
         if args.json:
             output = {
